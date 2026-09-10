@@ -48,6 +48,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes zsh
+          # The runner image makes this directory writable, triggering compaudit.
+          sudo chmod go-w /usr/share/zsh
           echo "/home/linuxbrew/.linuxbrew/bin" >> "$GITHUB_PATH"
       - shell: bash
         run: |
