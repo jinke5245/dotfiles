@@ -31,7 +31,7 @@ sandbox_chezmoi() (
   cd "$SANDBOX_ROOT" || return
 
   env -i \
-    PATH="$PATH" \
+    PATH="${SANDBOX_PATH:-$PATH}" \
     HOME="$SANDBOX_HOME" \
     XDG_CONFIG_HOME="$SANDBOX_ROOT/config" \
     XDG_CACHE_HOME="$SANDBOX_ROOT/cache" \

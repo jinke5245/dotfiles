@@ -4,7 +4,17 @@ Personal dotfiles for macOS and Linux, managed with [chezmoi](https://www.chezmo
 
 ## Usage
 
-The minimal Zsh configuration and repository checks are available. Oh My Zsh must already exist at `~/.oh-my-zsh`; installation scripts and complete setup instructions will follow.
+With Bash, Git, curl, Zsh, and chezmoi available, apply from the repository root:
+
+```sh
+chezmoi --source "$PWD" apply
+```
+
+Before applying configuration, chezmoi invokes `scripts/install.sh` to ensure Homebrew and Oh My Zsh at `~/.oh-my-zsh`, using their official installers. Supported systems are macOS and Debian / Ubuntu.
+
+On Debian / Ubuntu, a missing Homebrew installation first triggers `sudo apt-get update` and installation of `build-essential`, `procps`, `curl`, `file`, and `git`, following the [official Linux requirements](https://docs.brew.sh/Homebrew-on-Linux). Homebrew may require administrator permissions.
+
+Existing installations are skipped; download or installer failures stop the apply. Oh My Zsh uses `--unattended --keep-zshrc` to preserve existing configuration and avoid changing or launching the shell. On a fresh home, its generated `.zshrc` is then replaced by the managed configuration. Shell startup never installs dependencies.
 
 Login shells initialize Homebrew when available, then prepend `~/bin`, `~/.local/bin`, and `/usr/local/bin` to PATH with duplicates removed. Interactive shells inherit PATH and load Oh My Zsh with the `robbyrussell` theme and `git` plugin.
 
@@ -21,7 +31,8 @@ Chezmoi selects the default Homebrew path using `.chezmoi.os` and `.chezmoi.arch
 │   ├── dot_zprofile.tmpl # Login environment
 │   └── dot_zshrc         # Interactive shell
 ├── scripts/              # Installation scripts
-│   └── lib/              # Reusable script libraries
+│   ├── install.sh        # Entry point
+│   └── lib/              # Homebrew and Oh My Zsh functions
 ├── tests/                # Behavior tests and helpers
 └── .github/workflows/    # CI checks
 ```
@@ -47,12 +58,13 @@ pnpm install --frozen-lockfile
 
 ### Checks
 
-| Command         | Purpose                                          |
-| --------------- | ------------------------------------------------ |
-| `pnpm check`    | Run linting, formatting checks, and tests.       |
-| `pnpm test`     | Run the unit and integration suites.             |
-| `pnpm format`   | Format repository files.                         |
-| `pnpm test:e2e` | Run shell checks with a real Oh My Zsh checkout. |
+| Command         | Purpose                                            |
+| --------------- | -------------------------------------------------- |
+| `pnpm check`    | Run linting, formatting checks, and tests.         |
+| `pnpm ci:test`  | Run the CI workflow locally when act is installed. |
+| `pnpm test`     | Run the unit and integration suites.               |
+| `pnpm format`   | Format repository files.                           |
+| `pnpm test:e2e` | Run end-to-end tests separately.                   |
 
 CI runs `pnpm check` on Ubuntu for pull requests and pushes to `main`.
 
@@ -70,15 +82,7 @@ Use [Bats](https://bats-core.readthedocs.io/), installed through pnpm. Prioritiz
 
 Create directories as needed and name test files after the behavior they cover.
 
-- `integration/chezmoi-layout.bats`: source discovery, mapping, deployment exclusions, repeatable application, and preservation of unrelated files.
-- `integration/zsh-startup.bats`: Zsh syntax, startup modes, Homebrew selection, PATH handling, and missing Oh My Zsh. Platform cases render templates with chezmoi data overrides and relocate installation paths into the sandbox; these do not replace tests on each OS.
-- `e2e/zsh-startup.bats`: real Oh My Zsh theme, plugin, history, and completion loading. Requires Git and a local Oh My Zsh checkout:
-
-  ```sh
-  OMZ_SOURCE=/path/to/ohmyzsh pnpm test:e2e
-  ```
-
-The e2e suite copies committed framework files into a temporary home and disables update checks. It does not install dependencies or use the network.
+See [tests/README.md](tests/README.md) for suite coverage, execution requirements, and isolation details.
 
 ## Conventions
 
@@ -91,12 +95,14 @@ The e2e suite copies committed framework files into a temporary home and disable
 
 - Entry points call functions explicitly; sourcing libraries has no installation side effects.
 - Keep installation idempotent and separate from shell startup.
+- Use `run_before_` adapters to invoke external scripts on every apply. Keep calls one-way; installers must not invoke `chezmoi apply`.
 - Render templates before checking scripts, and test Zsh behavior with Zsh.
 - Zsh files use `zsh -n` syntax checks; exclude them from the Bash-oriented formatter.
 - Base `.zshrc` on the upstream Oh My Zsh template, preserve its structure and examples, and append personal configuration after the examples.
 
 ### Testing
 
+- Separate setup, execution, and assertions with blank lines. Comment non-obvious fixture behavior and isolation choices; use readable multiline snippets.
 - Assert exit status, output, and resulting files. Avoid coupling tests to implementation details.
 - Test real repository copies with isolated home, configuration, cache, and state paths. Leave the checkout and real home untouched.
 - Keep default tests offline and independent of execution order. Use controlled substitutes at external boundaries when needed.
