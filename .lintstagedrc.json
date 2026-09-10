@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/lintstagedrc.schema.json",
+  "*.{js,mjs,cjs}": [
+    "eslint --fix",
+    "prettier --write"
+  ],
+  "*.{json,jsonc,json5,yml,yaml,md}": [
+    "eslint --fix",
+    "prettier --write"
+  ],
+  "*.{sh,bash,zsh,bats}": [
+    "prettier --write"
+  ],
+  ".husky/*": [
+    "prettier --write"
+  ]
+}

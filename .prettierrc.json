@@ -1,0 +1,17 @@
+{
+  "$schema": "https://www.schemastore.org/prettierrc.json",
+  "plugins": [
+    "prettier-plugin-multiline-arrays",
+    "prettier-plugin-sh"
+  ],
+  "overrides": [
+    {
+      "files": "**/*.bats",
+      "options": {
+        "parser": "sh",
+        "variant": 8
+      }
+    }
+  ],
+  "multilineArraysWrapThreshold": 1
+}

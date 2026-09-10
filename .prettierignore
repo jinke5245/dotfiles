@@ -1,0 +1,11 @@
+# ignore files
+.gitignore
+
+# lock files
+*-lock.*
+
+# generated files
+.husky/_/
+
+# imported files
+.agents/skills
