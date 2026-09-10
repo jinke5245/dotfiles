@@ -4,7 +4,10 @@
 # shellcheck disable=SC2016
 
 setup_container_create() {
-  command -v docker > /dev/null
+  if ! command -v docker > /dev/null; then
+    printf 'Docker is required to run the Ubuntu setup tests.\n' >&2
+    return 1
+  fi
 
   # No bind mounts, host credentials, or Docker socket enter the container.
   SETUP_CONTAINER="$(docker create --init ubuntu:24.04 sleep infinity)"

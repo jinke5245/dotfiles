@@ -4,19 +4,20 @@ See the root README for [development requirements](../README.md#requirements) an
 
 ## Suites
 
-| File                                                                       | Coverage                                                                                                                |
-| -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| [integration/chezmoi-layout.bats](integration/chezmoi-layout.bats)         | Source discovery, target paths, deployment exclusions, repeatable application, and unrelated files.                     |
-| [integration/chezmoi-install.bats](integration/chezmoi-install.bats)       | Installation before configuration, failure propagation, repeatable application, and changes to external scripts.        |
-| [integration/chezmoi-usage.bats](integration/chezmoi-usage.bats)           | Configuration application from a clone, previewing changes, and applying pulled updates using a local Git remote.       |
-| [integration/install-homebrew.bats](integration/install-homebrew.bats)     | macOS and Debian / Ubuntu installation, existing executables, and prerequisite, download, or installer failures.        |
-| [integration/install-oh-my-zsh.bats](integration/install-oh-my-zsh.bats)   | Official installer invocation, existing installations, configuration preservation, managed paths, and failures.         |
-| [integration/sandbox-isolation.bats](integration/sandbox-isolation.bats)   | Current edits and new files are copied; ignored private data, Git metadata, and deleted files are excluded.             |
-| [integration/setup-macos-safety.bats](integration/setup-macos-safety.bats) | macOS setup refuses local, act, and self-hosted execution before installation or removal.                               |
-| [integration/zsh-startup.bats](integration/zsh-startup.bats)               | Zsh syntax, startup modes, Homebrew selection, PATH handling, and missing Oh My Zsh.                                    |
-| [e2e/chezmoi-flow.bats](e2e/chezmoi-flow.bats)                             | Real Oh My Zsh installation, native rendering, shell startup, repeat applies, and changes to external scripts.          |
-| [e2e/setup.bats](e2e/setup.bats)                                           | Documented first-time setup with real downloads, missing dependencies, login startup, and repeat application in Ubuntu. |
-| [e2e/setup-macos.bats](e2e/setup-macos.bats)                               | The same first-time setup checks on a guarded GitHub-hosted macOS runner, including missing Homebrew.                   |
+| File                                                                               | Coverage                                                                                                                |
+| ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| [integration/chezmoi-layout.bats](integration/chezmoi-layout.bats)                 | Source discovery, target paths, deployment exclusions, repeatable application, and unrelated files.                     |
+| [integration/chezmoi-install.bats](integration/chezmoi-install.bats)               | Installation before configuration, failure propagation, repeatable application, and changes to external scripts.        |
+| [integration/chezmoi-usage.bats](integration/chezmoi-usage.bats)                   | Configuration application from a clone, previewing changes, and applying pulled updates using a local Git remote.       |
+| [integration/install-homebrew.bats](integration/install-homebrew.bats)             | macOS and Debian / Ubuntu installation, existing executables, and prerequisite, download, or installer failures.        |
+| [integration/install-oh-my-zsh.bats](integration/install-oh-my-zsh.bats)           | Official installer invocation, existing installations, configuration preservation, managed paths, and failures.         |
+| [integration/sandbox-isolation.bats](integration/sandbox-isolation.bats)           | Current edits and new files are copied; ignored private data, Git metadata, and deleted files are excluded.             |
+| [integration/setup-container-safety.bats](integration/setup-container-safety.bats) | Container setup reports missing Docker and stops before attempting installation.                                        |
+| [integration/setup-macos-safety.bats](integration/setup-macos-safety.bats)         | macOS setup refuses local, act, and self-hosted execution before installation or removal.                               |
+| [integration/zsh-startup.bats](integration/zsh-startup.bats)                       | Zsh syntax, startup modes, Homebrew selection, PATH handling, and missing Oh My Zsh.                                    |
+| [e2e/chezmoi-flow.bats](e2e/chezmoi-flow.bats)                                     | Real Oh My Zsh installation, native rendering, shell startup, repeat applies, and changes to external scripts.          |
+| [e2e/setup.bats](e2e/setup.bats)                                                   | Documented first-time setup with real downloads, missing dependencies, login startup, and repeat application in Ubuntu. |
+| [e2e/setup-macos.bats](e2e/setup-macos.bats)                                       | The same first-time setup checks on a guarded GitHub-hosted macOS runner, including missing Homebrew.                   |
 
 ## Running
 
