@@ -30,3 +30,34 @@ jobs:
           sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: pnpm check
+
+  test-e2e:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/setup@v2
+        with:
+          runtime: node@22
+          cache: true
+          require-lockfile: true
+      - if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes zsh
+          echo "/home/linuxbrew/.linuxbrew/bin" >> "$GITHUB_PATH"
+      - shell: bash
+        run: |
+          sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - uses: actions/checkout@v7
+        with:
+          repository: ohmyzsh/ohmyzsh
+          path: .cache/ohmyzsh
+          persist-credentials: false
+      - run: pnpm test:e2e
+        env:
+          OMZ_SOURCE: ${{ github.workspace }}/.cache/ohmyzsh

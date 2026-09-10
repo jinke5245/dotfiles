@@ -19,10 +19,10 @@ sandbox_create() {
     "$SANDBOX_ROOT/data" "$SANDBOX_ROOT/state" "$SANDBOX_ROOT/tmp"
   : > "$SANDBOX_CONFIG"
 
-  # Include uncommitted configuration without copying Git data or dependencies.
+  # Include uncommitted configuration without Git data, dependencies, or caches.
   (
     set -o pipefail
-    tar -C "$project_root" --exclude=.git --exclude=node_modules -cf - . \
+    tar -C "$project_root" --exclude=.git --exclude=node_modules --exclude=./.cache -cf - . \
       | tar -C "$SANDBOX_REPOSITORY" -xf -
   )
 }

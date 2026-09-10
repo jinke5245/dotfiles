@@ -58,15 +58,15 @@ pnpm install --frozen-lockfile
 
 ### Checks
 
-| Command         | Purpose                                            |
-| --------------- | -------------------------------------------------- |
-| `pnpm check`    | Run linting, formatting checks, and tests.         |
-| `pnpm ci:test`  | Run the CI workflow locally when act is installed. |
-| `pnpm test`     | Run the unit and integration suites.               |
-| `pnpm format`   | Format repository files.                           |
-| `pnpm test:e2e` | Run end-to-end tests separately.                   |
+| Command         | Purpose                                             |
+| --------------- | --------------------------------------------------- |
+| `pnpm check`    | Run linting, formatting checks, and tests.          |
+| `pnpm ci:test`  | Run the CI check job locally when act is installed. |
+| `pnpm test`     | Run the unit and integration suites.                |
+| `pnpm format`   | Format repository files.                            |
+| `pnpm test:e2e` | Run end-to-end tests separately.                    |
 
-CI runs `pnpm check` on Ubuntu for pull requests and pushes to `main`.
+CI runs `check` on Ubuntu and `test-e2e` on macOS and Ubuntu for pull requests and pushes to `main`.
 
 ### Tests
 

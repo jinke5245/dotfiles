@@ -2,7 +2,11 @@
 
 zsh_sandbox_create() {
   sandbox_create
+  zsh_sandbox_prepare
+  zsh_sandbox_apply "$@"
+}
 
+zsh_sandbox_prepare() {
   SANDBOX_ZSH="$(command -v zsh)" || {
     printf 'zsh must be available on PATH to run shell tests.\n' >&2
     return 1
@@ -11,7 +15,6 @@ zsh_sandbox_create() {
   SANDBOX_ZSH_PATH=/usr/bin:/bin
   mkdir -p "$SANDBOX_HOME"
   : > "$SANDBOX_ROOT/startup.log"
-  zsh_sandbox_apply "$@" || return
 
   # Disable network updates only in the test-owned startup environment.
   printf "zstyle ':omz:update' mode disabled\n" > "$SANDBOX_HOME/.zshenv"
