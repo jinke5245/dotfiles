@@ -1,0 +1,10 @@
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "files.associations": {
+    "*.sh.tmpl": "shellscript",
+    "*ignore": "ignore",
+    "*zprofile*": "shellscript",
+    "*zshrc*": "shellscript"
+  },
+  "files.insertFinalNewline": true
+}
