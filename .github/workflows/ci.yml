@@ -51,6 +51,18 @@ jobs:
           # The runner image makes this directory writable, triggering compaudit.
           sudo chmod go-w /usr/share/zsh
           echo "/home/linuxbrew/.linuxbrew/bin" >> "$GITHUB_PATH"
+      - if: env.ACT == 'true'
+        # The local act image lacks Homebrew and runs jobs as root.
+        run: |
+          test -f /.dockerenv
+          test "$(id -u)" -eq 0
+          apt-get update
+          apt-get install --yes build-essential procps curl file git
+          useradd --create-home --shell /bin/bash linuxbrew
+          install -d -o linuxbrew -g linuxbrew /home/linuxbrew/.linuxbrew
+          runuser -u linuxbrew -- env NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          # E2E only reads Homebrew; align ownership with the act test user.
+          chown -R root:root /home/linuxbrew/.linuxbrew
       - shell: bash
         run: |
           sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin"
@@ -63,3 +75,23 @@ jobs:
       - run: pnpm test:e2e
         env:
           OMZ_SOURCE: ${{ github.workspace }}/.cache/ohmyzsh
+
+  test-setup:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/setup@v2
+        with:
+          runtime: node@22
+          cache: true
+          require-lockfile: true
+      - if: runner.os == 'Linux'
+        run: pnpm test:setup
+      - if: runner.os == 'macOS'
+        # Use system Bash throughout Bats, including after Homebrew is removed.
+        run: PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH" pnpm test:setup:macos

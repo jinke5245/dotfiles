@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 
 sandbox_create() {
-  local project_root
-  project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
-
   SANDBOX_ROOT="$(cd "$BATS_TEST_TMPDIR" && pwd -P)"
   SANDBOX_REPOSITORY="$SANDBOX_ROOT/repository with spaces"
   SANDBOX_HOME="$SANDBOX_ROOT/home"
@@ -19,11 +16,27 @@ sandbox_create() {
     "$SANDBOX_ROOT/data" "$SANDBOX_ROOT/state" "$SANDBOX_ROOT/tmp"
   : > "$SANDBOX_CONFIG"
 
-  # Include uncommitted configuration without Git data, dependencies, or caches.
+  sandbox_copy_repository "$SANDBOX_REPOSITORY"
+}
+
+sandbox_copy_repository() {
+  local project_root
+  project_root="${2:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)}"
+  mkdir -p "$1"
+
+  # Copy current contents, including new files, without ignored local data.
   (
     set -o pipefail
-    tar -C "$project_root" --exclude=.git --exclude=node_modules --exclude=./.cache -cf - . \
-      | tar -C "$SANDBOX_REPOSITORY" -xf -
+    git -C "$project_root" ls-files --cached --others --exclude-standard -z \
+      | while IFS= read -r -d '' file; do
+        # Deleted tracked files remain in the index until staged.
+        if [ -e "$project_root/$file" ] || [ -L "$project_root/$file" ]; then
+          printf '%s\0' "$file"
+        fi
+      done \
+      | tar -C "$project_root" --null --no-recursion --exclude=.git \
+        --exclude=node_modules --exclude=.cache -T - -cf - \
+      | tar -C "$1" -xf -
   )
 }
 

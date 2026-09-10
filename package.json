@@ -33,8 +33,14 @@
     "test": "run-s test:unit test:integration",
     "test:unit": "echo \"No unit tests\"",
     "test:integration": "bats --recursive --print-output-on-failure tests/integration",
-    "test:e2e": "bats --recursive --print-output-on-failure tests/e2e",
-    "ci:test": "bash scripts/run-if-available.sh act workflow_dispatch --workflows .github/workflows/ci.yml --job check"
+    "test:e2e": "bats --recursive --filter-tags '!network' --print-output-on-failure tests/e2e",
+    "test:setup": "bats --recursive --filter-tags network,container --print-output-on-failure tests/e2e",
+    "test:setup:macos": "bats --recursive --filter-tags network,macos --print-output-on-failure tests/e2e",
+    "ci:run": "bash scripts/run-if-available.sh act workflow_dispatch",
+    "ci:test": "run-s ci:test:*",
+    "ci:test:check": "pnpm ci:run --job check",
+    "ci:test:test-e2e": "pnpm ci:run --job test-e2e --matrix os:ubuntu-latest",
+    "ci:test:test-setup": "pnpm ci:run --job test-setup --matrix os:ubuntu-latest"
   },
   "packageManager": "pnpm@12.3.4+sha512.961aa41fb077da3a04a441d9f8e15ebc0c96da8ef710b2eb67bf9ee7cb0610eabd48f1fd85f51cffe73846785fa0f87c56a3a872a1d893f8446741b5cce45457"
 }
