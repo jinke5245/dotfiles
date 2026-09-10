@@ -1,0 +1,23 @@
+{{- $brew := "" -}}
+{{- if eq .chezmoi.os "darwin" -}}
+{{- if eq .chezmoi.arch "arm64" -}}
+{{- $brew = "/opt/homebrew/bin/brew" -}}
+{{- else -}}
+{{- $brew = "/usr/local/bin/brew" -}}
+{{- end -}}
+{{- else if eq .chezmoi.os "linux" -}}
+{{- $brew = "/home/linuxbrew/.linuxbrew/bin/brew" -}}
+{{- end -}}
+# Initialize the selected homebrew installation for login shells.
+if (( $+commands[brew] )); then
+  eval "$(brew shellenv zsh)"
+{{- if $brew }}
+elif [[ -x {{ $brew | quote }} ]]; then
+  eval "$({{ $brew | quote }} shellenv zsh)"
+{{- end }}
+fi
+
+# Keep user executables first without accumulating duplicate paths.
+typeset -U path PATH
+path=("$HOME/bin" "$HOME/.local/bin" /usr/local/bin $path)
+export PATH

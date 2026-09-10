@@ -32,7 +32,8 @@
     "format:check": "prettier --check .",
     "test": "run-s test:unit test:integration",
     "test:unit": "echo \"No unit tests\"",
-    "test:integration": "bats --recursive --print-output-on-failure tests/integration"
+    "test:integration": "bats --recursive --print-output-on-failure tests/integration",
+    "test:e2e": "bats --recursive --print-output-on-failure tests/e2e"
   },
   "packageManager": "pnpm@12.3.4+sha512.961aa41fb077da3a04a441d9f8e15ebc0c96da8ef710b2eb67bf9ee7cb0610eabd48f1fd85f51cffe73846785fa0f87c56a3a872a1d893f8446741b5cce45457"
 }

@@ -22,6 +22,9 @@ jobs:
           runtime: node@22
           cache: true
           require-lockfile: true
+      - run: |
+          sudo apt-get update
+          sudo apt-get install --yes zsh
       - shell: bash
         run: |
           sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin"

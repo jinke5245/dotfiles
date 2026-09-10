@@ -1,7 +1,9 @@
 {
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "files.associations": {
-    "*ignore": "ignore"
+    "*ignore": "ignore",
+    "*zprofile*": "shellscript",
+    "*zshrc*": "shellscript"
   },
   "files.insertFinalNewline": true
 }

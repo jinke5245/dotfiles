@@ -8,7 +8,7 @@
     "eslint --fix",
     "prettier --write"
   ],
-  "*.{sh,bash,zsh,bats}": [
+  "*.{sh,bash,bats}": [
     "prettier --write"
   ],
   ".husky/*": [

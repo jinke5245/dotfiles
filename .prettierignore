@@ -9,3 +9,6 @@
 
 # imported files
 .agents/skills
+
+# zsh syntax is checked with zsh
+*.zsh
