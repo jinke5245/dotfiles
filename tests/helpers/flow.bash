@@ -24,17 +24,22 @@ flow_sandbox_create() {
   sandbox_create
   zsh_sandbox_prepare
 
-  local brew_directory
-  brew_directory="$(dirname "$(command -v brew)")"
+  local real_brew brew_directory
+  real_brew="$(command -v brew)"
+  brew_directory="$(dirname "$real_brew")"
   SANDBOX_PATH="$SANDBOX_ROOT/bin:$brew_directory:/usr/bin:/bin"
   SANDBOX_ZSH_PATH="$SANDBOX_PATH"
   mkdir -p "$SANDBOX_ROOT/bin" "$SANDBOX_HOME/.test-upstream"
 
-  # Keep Homebrew at its original path so it can resolve its own installation.
-  # The offline download adapter takes precedence over system commands.
+  # Keep the real Homebrew in place, but permit only read-only calls through the
+  # adapter. The installer may check dependencies without changing host packages.
+  printf '%s\n' "$real_brew" > "$SANDBOX_HOME/.test-upstream/brew-path"
   ln -s "$SANDBOX_ZSH" "$SANDBOX_ROOT/bin/zsh"
-  cp "$SANDBOX_REPOSITORY/tests/fixtures/flow/curl.bash" "$SANDBOX_ROOT/bin/curl"
-  chmod +x "$SANDBOX_ROOT/bin/curl"
+  local command
+  for command in brew curl; do
+    cp "$SANDBOX_REPOSITORY/tests/fixtures/flow/$command.bash" "$SANDBOX_ROOT/bin/$command"
+    chmod +x "$SANDBOX_ROOT/bin/$command"
+  done
 
   git -C "$BATS_FILE_TMPDIR/ohmyzsh.git" show master:tools/install.sh \
     > "$SANDBOX_HOME/.test-upstream/install.sh"

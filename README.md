@@ -36,7 +36,7 @@ chezmoi --source "$PWD" diff
 chezmoi --source "$PWD" apply
 ```
 
-Applying installs missing Homebrew and Oh My Zsh through their official installers, then writes the managed `.zprofile` and `.zshrc`. Existing installations are preserved; installation failures stop the apply. On Debian / Ubuntu, the script also installs [Homebrew's build prerequisites](https://docs.brew.sh/Homebrew-on-Linux).
+Applying prepares Homebrew, installs the packages declared in `Brewfile`, and installs Oh My Zsh before writing the managed `.zprofile` and `.zshrc`. Homebrew and Oh My Zsh use their official installers; installation failures stop the apply. On Debian / Ubuntu, the script also installs [Homebrew's build prerequisites](https://docs.brew.sh/Homebrew-on-Linux).
 
 Start a login Zsh to load the environment and interactive configuration:
 
@@ -57,13 +57,14 @@ Run these commands from the repository root. Edit files under `home/`; changes m
 | Pull repository updates       | `git pull --ff-only`, then preview and apply |
 | Reload the login environment  | `exec zsh -l`                                |
 
-Each apply checks dependencies again and picks up changes to installation scripts. Homebrew and Oh My Zsh upgrades remain managed by their own update mechanisms.
+Each apply picks up changes to the Brewfile and installation scripts. Brewfile packages use `brew bundle install --no-upgrade`: missing packages are installed without requesting routine upgrades or removing other packages. Homebrew and Oh My Zsh upgrades remain managed by their own update mechanisms.
 
 ## Layout
 
 ```text
 .
 ├── .chezmoiroot          # Selects home/ as the source root
+├── Brewfile              # Shared Homebrew packages
 ├── home/                 # Chezmoi source state
 │   ├── .chezmoiignore    # Deployment exclusions
 │   ├── .chezmoiscripts/  # Chezmoi lifecycle adapters

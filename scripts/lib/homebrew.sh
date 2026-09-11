@@ -1,8 +1,24 @@
 #!/usr/bin/env bash
 
+find_homebrew() {
+  if command -v brew; then
+    return 0
+  fi
+
+  # Installers do not update the calling shell's PATH.
+  local brew
+  for brew in /opt/homebrew/bin/brew /usr/local/bin/brew /home/linuxbrew/.linuxbrew/bin/brew; do
+    if [[ -x "$brew" ]]; then
+      printf '%s\n' "$brew"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
 install_homebrew() {
-  if command -v brew > /dev/null 2>&1 \
-    || [[ -x /opt/homebrew/bin/brew || -x /usr/local/bin/brew || -x /home/linuxbrew/.linuxbrew/bin/brew ]]; then
+  if find_homebrew > /dev/null; then
     return 0
   fi
 
@@ -19,4 +35,14 @@ install_homebrew() {
   local installer
   installer="$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || return
   /bin/bash -c "$installer"
+}
+
+install_homebrew_packages() {
+  local brew
+  brew="$(find_homebrew)" || {
+    printf 'Homebrew: brew executable was not found after installation.\n' >&2
+    return 1
+  }
+
+  "$brew" bundle install --file="$1" --no-upgrade
 }

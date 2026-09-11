@@ -64,7 +64,6 @@ setup() {
 
   run -0 sandbox_chezmoi apply
 
-  [ -z "$output" ]
   for file in .zprofile .zshrc .oh-my-zsh/oh-my-zsh.sh; do
     before="$SANDBOX_ROOT/$(basename "$file").before"
     cmp "$SANDBOX_HOME/$file" "$before"

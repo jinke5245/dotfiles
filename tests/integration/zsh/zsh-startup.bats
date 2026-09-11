@@ -3,8 +3,8 @@
 # Shell snippets expand in Zsh. Bats isolates each test; helpers read scenario variables.
 # shellcheck disable=SC2016,SC2030,SC2031
 
-load '../helpers/sandbox.bash'
-load '../helpers/zsh.bash'
+load '../../helpers/sandbox.bash'
+load '../../helpers/zsh.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0

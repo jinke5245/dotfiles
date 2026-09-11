@@ -8,7 +8,7 @@ setup_file() {
 }
 
 setup() {
-  MACOS_SETUP_HELPER="$BATS_TEST_DIRNAME/../helpers/setup-macos.bash"
+  MACOS_SETUP_HELPER="$BATS_TEST_DIRNAME/../../helpers/setup-macos.bash"
   mkdir -p "$BATS_TEST_TMPDIR/bin" "$BATS_TEST_TMPDIR/home"
   # Exercise the macOS guards even when this suite runs on Linux.
   printf '#!/bin/sh\nprintf "Darwin\\n"\n' > "$BATS_TEST_TMPDIR/bin/uname"

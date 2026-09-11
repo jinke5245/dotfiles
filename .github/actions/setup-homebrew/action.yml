@@ -1,0 +1,21 @@
+name: Set up Homebrew
+description: Ensure Homebrew is installed on macOS or Debian / Ubuntu
+
+runs:
+  using: composite
+  steps:
+    - if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install --yes build-essential procps curl file git
+
+    - shell: bash
+      run: |
+        export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin:/home/linuxbrew/.linuxbrew/bin"
+        if ! command -v brew > /dev/null; then
+          NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        fi
+
+        prefix="$(brew --prefix)"
+        printf '%s\n' "$prefix/sbin" "$prefix/bin" >> "$GITHUB_PATH"

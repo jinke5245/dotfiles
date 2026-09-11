@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-load '../helpers/sandbox.bash'
+load '../../helpers/sandbox.bash'
 
 @test "repository snapshots preserve current changes and exclude ignored local files" {
   local source="$BATS_TEST_TMPDIR/source"

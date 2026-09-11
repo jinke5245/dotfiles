@@ -79,6 +79,12 @@ setup_check_flow() {
   ' "$SETUP_BREW_PREFIX"
   [ -z "$output" ]
 
+  # Package-manager diagnostics are separate from a quiet shell startup.
+  run -0 setup_shell 'exec zsh -lc "$1"' _ '
+    brew bundle check --file="$HOME/dotfiles/Brewfile" --no-upgrade &&
+    brew list --versions > "$HOME/.test-package-versions"
+  '
+
   # Snapshot both configuration and installed framework files before reapplying.
   setup_shell '
     mkdir "$HOME/.test-before"
@@ -92,7 +98,12 @@ setup_check_flow() {
     export PATH="$HOME/.local/bin:$PATH"
     cd "$HOME/dotfiles"
     chezmoi --source "$PWD" apply
-    chezmoi --source "$PWD" diff --exclude scripts
+    configuration_diff="$(chezmoi --source "$PWD" diff --exclude scripts)"
+    test -z "$configuration_diff"
+
+    # Repeated apply must not request upgrades of already installed packages.
+    zsh -lc "brew list --versions" > "$HOME/.test-package-versions-after"
+    cmp "$HOME/.test-package-versions" "$HOME/.test-package-versions-after"
 
     for file in .zprofile .zshrc .oh-my-zsh/oh-my-zsh.sh; do
       before="$HOME/.test-before/$(basename "$file")"
@@ -102,5 +113,4 @@ setup_check_flow() {
     done
     test "$(cat "$HOME/.oh-my-zsh/custom/personal-note")" = keep
   '
-  [ -z "$output" ]
 }
