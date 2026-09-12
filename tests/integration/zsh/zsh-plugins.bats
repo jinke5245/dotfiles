@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
-# Shell snippets expand in the isolated Zsh process.
-# shellcheck disable=SC2016
+# Shell snippets expand in Zsh; Bats isolates each scenario's PATH.
+# shellcheck disable=SC2016,SC2030,SC2031
 
 load '../../helpers/sandbox.bash'
 load '../../helpers/zsh.bash'
@@ -61,6 +61,39 @@ setup() {
   [ "$(cat "$SANDBOX_ROOT/startup.log")" = "$(printf '%s\n' \
     "omz:robbyrussell:git:$SANDBOX_ROOT/inherited brew" \
     autojump zsh-autosuggestions zsh-syntax-highlighting zsh-history-substring-search)" ]
+}
+
+@test "interactive shells without Homebrew still load Oh My Zsh and local overrides" {
+  SANDBOX_ZSH_PATH=/usr/bin:/bin
+  cat "$SANDBOX_REPOSITORY/tests/fixtures/zsh/source-within-home.zsh" >> "$SANDBOX_HOME/.zshenv"
+  cp "$SANDBOX_REPOSITORY/tests/fixtures/zsh/local.zsh" "$SANDBOX_HOME/.zshrc.local"
+
+  local mode
+  for mode in -lic -ic; do
+    run -0 --separate-stderr sandbox_zsh "$mode" '
+      [[ -z ${HOMEBREW_PREFIX:-} ]] &&
+      [[ $EDITOR = nvim ]] &&
+      [[ $(project) = "$HOME/projects" ]] &&
+      print -r -- ready
+    '
+
+    [ "$output" = ready ]
+    [ -z "$stderr" ]
+  done
+  [ "$(cat "$SANDBOX_ROOT/startup.log")" = "$(printf '%s\n' \
+    omz:robbyrussell:git:none omz:robbyrussell:git:none)" ]
+}
+
+@test "an empty prefix and failed Homebrew lookup leave interactive startup quiet" {
+  printf 'export HOMEBREW_PREFIX=\n' >> "$SANDBOX_HOME/.zshenv"
+  cat "$SANDBOX_REPOSITORY/tests/fixtures/zsh/source-within-home.zsh" >> "$SANDBOX_HOME/.zshenv"
+  printf '#!/bin/sh\nexit 1\n' > "$SANDBOX_ROOT/brew/bin/brew"
+
+  run -0 --separate-stderr sandbox_zsh -ic '[[ -z ${HOMEBREW_PREFIX:-} ]] && print -r -- ready'
+
+  [ "$output" = ready ]
+  [ -z "$stderr" ]
+  [ "$(cat "$SANDBOX_ROOT/startup.log")" = omz:robbyrussell:git:none ]
 }
 
 @test "reports a missing plugin and continues loading later integrations" {

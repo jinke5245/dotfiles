@@ -133,17 +133,19 @@ fi
 #
 ################################################################################
 
-# autojump
-source "$HOMEBREW_PREFIX/etc/profile.d/autojump.sh"
+if [[ -n ${HOMEBREW_PREFIX:-} ]]; then
+  # autojump
+  source "$HOMEBREW_PREFIX/etc/profile.d/autojump.sh"
 
-# zsh-autosuggestions
-source "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+  # zsh-autosuggestions
+  source "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
 
-# zsh-syntax-highlighting
-source "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+  # zsh-syntax-highlighting
+  source "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 
-# zsh-history-substring-search: load after syntax highlighting, as upstream recommends.
-source "$HOMEBREW_PREFIX/share/zsh-history-substring-search/zsh-history-substring-search.zsh"
+  # zsh-history-substring-search: load after syntax highlighting, as upstream recommends.
+  source "$HOMEBREW_PREFIX/share/zsh-history-substring-search/zsh-history-substring-search.zsh"
+fi
 
 # Support terminal-specific arrows and the common normal/application sequences.
 if (( $+widgets[history-substring-search-up] )); then

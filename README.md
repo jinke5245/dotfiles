@@ -46,7 +46,7 @@ exec zsh -l
 
 Login shells initialize Homebrew and PATH; interactive shells load Oh My Zsh with the `robbyrussell` theme and `git` plugin. Installation does not change the account's default shell. To select Zsh as the default, use `chsh -s "$(command -v zsh)"` separately.
 
-Shared integrations add extra completions, autojump (`j <directory-pattern>`), history-based suggestions (Right accepts), syntax highlighting, and substring history search (Up / Down). Extra completion definitions load before Oh My Zsh initializes completion; the other integrations load afterward. Brewfile supplies the required plugins; shell startup loads them directly and reports missing files without installing packages.
+Shared integrations add extra completions, autojump (`j <directory-pattern>`), history-based suggestions (Right accepts), syntax highlighting, and substring history search (Up / Down). Extra completion definitions load before Oh My Zsh initializes completion; the other integrations load afterward. Brewfile supplies the required plugins; shell startup loads them directly when a Homebrew prefix is available and reports missing files without installing packages.
 
 ### Daily use
 
