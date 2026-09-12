@@ -61,6 +61,17 @@ Run these commands from the repository root. Edit files under `home/`; changes m
 
 Each apply picks up changes to the Brewfile and installation scripts. Brewfile packages use `brew bundle install --no-upgrade`: missing packages are installed without requesting routine upgrades or removing other packages. Homebrew and Oh My Zsh upgrades remain managed by their own update mechanisms.
 
+### Local customization
+
+Create `~/.zshrc.local` on each machine for local aliases, functions, environment variables, and key bindings. It loads last in interactive shells, so local settings take precedence:
+
+```zsh
+export EDITOR=nvim
+alias gst='git status --short'
+```
+
+The file is optional and ignored by Git and chezmoi. Setup and apply neither create nor overwrite it.
+
 ## Layout
 
 ```text

@@ -93,3 +93,24 @@ EOF
 
   [ -z "$output" ]
 }
+
+@test "machine-local configuration overrides Oh My Zsh and shared history bindings" {
+  cp "$SANDBOX_REPOSITORY/tests/fixtures/zsh/local.zsh" "$SANDBOX_HOME/.zshrc.local"
+
+  run -0 sandbox_zsh -lic '
+    [[ ${aliases[gst]} = "git status --short" ]] &&
+    [[ $EDITOR = nvim ]] &&
+    [[ $(project) = "$HOME/projects" ]]
+  '
+  [ -z "$output" ]
+
+  # The local Up binding moves to the start of the line instead of searching history.
+  run -0 sandbox_zsh -f "$SANDBOX_REPOSITORY/tests/helpers/zsh-pty.zsh" << 'EOF'
+pty_send 'echo local-override'
+pty_expect_state buffer 'echo local-override'
+pty_send $'\e[A# '
+pty_expect_state buffer '# echo local-override'
+EOF
+
+  [ -z "$output" ]
+}

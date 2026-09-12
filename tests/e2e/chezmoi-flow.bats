@@ -22,6 +22,7 @@ setup() {
   run -0 sandbox_chezmoi apply
 
   [ -f "$SANDBOX_HOME/.oh-my-zsh/oh-my-zsh.sh" ]
+  [ ! -e "$SANDBOX_HOME/.zshrc.local" ]
   cmp "$SANDBOX_REPOSITORY/home/dot_zshrc" "$SANDBOX_HOME/.zshrc"
 
   local startup_file
@@ -50,11 +51,13 @@ setup() {
   done
 }
 
-@test "a second apply preserves configuration and the installed framework" {
+@test "first and repeated apply preserve local configuration and the installed framework" {
+  cp "$SANDBOX_REPOSITORY/tests/fixtures/zsh/local.zsh" "$SANDBOX_HOME/.zshrc.local"
   sandbox_chezmoi apply
+  cmp "$SANDBOX_REPOSITORY/tests/fixtures/zsh/local.zsh" "$SANDBOX_HOME/.zshrc.local"
 
   local file before
-  for file in .zprofile .zshrc .oh-my-zsh/oh-my-zsh.sh; do
+  for file in .zprofile .zshrc .zshrc.local .oh-my-zsh/oh-my-zsh.sh; do
     cp -p "$SANDBOX_HOME/$file" "$SANDBOX_ROOT/$(basename "$file").before"
   done
   printf 'keep\n' > "$SANDBOX_HOME/.oh-my-zsh/custom/personal-note"
@@ -64,7 +67,7 @@ setup() {
 
   run -0 sandbox_chezmoi apply
 
-  for file in .zprofile .zshrc .oh-my-zsh/oh-my-zsh.sh; do
+  for file in .zprofile .zshrc .zshrc.local .oh-my-zsh/oh-my-zsh.sh; do
     before="$SANDBOX_ROOT/$(basename "$file").before"
     cmp "$SANDBOX_HOME/$file" "$before"
     [ ! "$SANDBOX_HOME/$file" -nt "$before" ]

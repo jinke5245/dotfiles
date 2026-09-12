@@ -155,3 +155,8 @@ if (( $+widgets[history-substring-search-up] )); then
   done
   unset zsh_key
 fi
+
+# Load machine-local overrides after shared configuration.
+if [[ -r "$HOME/.zshrc.local" ]]; then
+  source "$HOME/.zshrc.local"
+fi
