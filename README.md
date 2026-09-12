@@ -23,6 +23,8 @@ sudo apt-get install --yes ca-certificates curl git zsh
 
 ### Setup
 
+Before the first apply, review the [Git migration steps](#git) if you already have Git configuration.
+
 Install chezmoi using its [official installer](https://www.chezmoi.io/install/#one-line-binary-install), then clone the repository and preview the configuration before applying it:
 
 ```sh
@@ -46,6 +48,8 @@ exec zsh -l
 
 Login shells initialize Homebrew and PATH; interactive shells load Oh My Zsh with the `robbyrussell` theme and `git` plugin. Installation does not change the account's default shell. To select Zsh as the default, use `chsh -s "$(command -v zsh)"` separately.
 
+The Brewfile includes Git, Git LFS, GitHub CLI (`gh`), GitLab CLI (`glab`), and Tig. System Git is used for initial setup; login shells make the Homebrew tools available. Authenticate `gh` and `glab` separately on each device.
+
 Shared integrations add extra completions, autojump (`j <directory-pattern>`), history-based suggestions (Right accepts), syntax highlighting, and substring history search (Up / Down). Extra completion definitions load before Oh My Zsh initializes completion; the other integrations load afterward. Brewfile supplies the required plugins; shell startup loads them directly when a Homebrew prefix is available and reports missing files without installing packages.
 
 ### Daily use
@@ -63,6 +67,8 @@ Each apply picks up changes to the Brewfile and installation scripts. Brewfile p
 
 ### Local customization
 
+#### Zsh
+
 Create `~/.zshrc.local` on each machine for local aliases, functions, environment variables, and key bindings. It loads last in interactive shells, so local settings take precedence:
 
 ```zsh
@@ -72,22 +78,68 @@ alias gst='git status --short'
 
 The file is optional and ignored by Git and chezmoi. Setup and apply neither create nor overwrite it.
 
+#### Git
+
+Shared defaults live in `~/.config/git/config`: new repositories use `main`, fetch prunes stale remote branches, pull requires a fast-forward, and Chinese filenames remain readable. Git LFS filters and GitHub / Gist HTTPS credential helpers are configured; `gh` resolves through PATH and requires device authentication.
+
+**Migration and identity**
+
+These paths use Git's default XDG location: `XDG_CONFIG_HOME` must be unset or point to `~/.config`.
+
+1. Review and back up existing `~/.gitconfig` and `~/.config/git/config`. Use `git config --global --list --show-origin` to locate current settings.
+2. Move device-specific settings into `~/.config/git/config.local`, preserving any settings already there.
+3. Preview `chezmoi diff` before applying. Resolve conflicting entries in `~/.gitconfig` manually; dotfiles do not move or delete that file.
+
+No default identity is provided. `user.useConfigOnly = true` requires an explicitly configured name and email for commits. Set or update them in the local file:
+
+```sh
+mkdir -p ~/.config/git
+git config --file ~/.config/git/config.local user.name "Your Name"
+git config --file ~/.config/git/config.local user.email "you@example.com"
+```
+
+`config.local` loads after shared defaults and can override them. Git and chezmoi ignore it; apply neither creates nor overwrites it. An existing `~/.gitconfig` is read afterward, and repository settings take precedence over these global files.
+
+**Authentication**
+
+Authenticate separately on each device with [GitHub CLI](https://cli.github.com/manual/gh_auth_login) and [GitLab CLI](https://docs.gitlab.com/cli/auth/login/), selecting the appropriate host and Git transport:
+
+```sh
+gh auth login
+glab auth login
+```
+
+Authentication state stays outside the repository. The shared GitHub helpers apply to HTTPS; SSH authentication remains device-managed.
+
+**Git LFS projects**
+
+Inside each repository that uses LFS, [initialize its hooks and local configuration](https://github.com/git-lfs/git-lfs/blob/main/docs/man/git-lfs-install.adoc), then select the file patterns to track:
+
+```sh
+git lfs install --local
+git lfs track "*.bin"
+git add .gitattributes
+```
+
+Commit `.gitattributes` with the matching files. `--local` keeps project setup from writing global configuration; tracking does not convert existing history.
+
 ## Layout
 
 ```text
 .
-├── .chezmoiroot          # Selects home/ as the source root
-├── Brewfile              # Shared Homebrew packages
-├── home/                 # Chezmoi source state
-│   ├── .chezmoiignore    # Deployment exclusions
-│   ├── .chezmoiscripts/  # Chezmoi lifecycle adapters
-│   ├── dot_zprofile.tmpl # Login environment
-│   └── dot_zshrc         # Interactive shell
-├── scripts/              # Installation scripts
-│   ├── install.sh        # Entry point
-│   └── lib/              # Homebrew and Oh My Zsh functions
-├── tests/                # Behavior tests and helpers
-└── .github/workflows/    # CI checks
+├── .chezmoiroot           # Selects home/ as the source root
+├── Brewfile               # Shared Homebrew packages
+├── home/                  # Chezmoi source state
+│   ├── .chezmoiignore     # Deployment exclusions
+│   ├── .chezmoiscripts/   # Chezmoi lifecycle adapters
+│   ├── dot_config/git/    # Shared Git configuration
+│   ├── dot_zprofile.tmpl  # Login environment
+│   └── dot_zshrc          # Interactive shell
+├── scripts/               # Installation scripts
+│   ├── install.sh         # Entry point
+│   └── lib/               # Homebrew and Oh My Zsh functions
+├── tests/                 # Behavior tests and helpers
+└── .github/workflows/     # CI checks
 ```
 
 Chezmoi filename attributes define target paths: for example, `home/dot_zshrc` maps to `~/.zshrc`. Repository documentation, tooling, and `scripts/` stay outside the deployment source.

@@ -55,11 +55,40 @@ setup_repository() {
   ' _ "$1"
 }
 
+setup_check_git_tools() {
+  # Check the expected installation, not a system copy elsewhere on PATH.
+  run -0 setup_shell 'exec zsh -lc "$1" _ "$2"' _ '
+    for tool in git git-lfs gh glab tig; do
+      expected="$1/bin/$tool"
+      actual="$(command -v "$tool")"
+      if [[ "$actual" != "$expected" ]]; then
+        print -u2 -r -- "$tool: expected $expected, got ${actual:-not found}"
+        exit 1
+      fi
+    done
+
+    git --version &&
+    git lfs version &&
+    gh --version &&
+    glab --version &&
+    tig --version
+  ' "$SETUP_BREW_PREFIX"
+}
+
+setup_check_git_configuration() {
+  run -0 setup_shell 'exec zsh -lc "$1" _ "$2"' _ '
+    source "$1/tests/helpers/git-flow.bash"
+    git_flow_check
+  ' "$SETUP_SOURCE"
+}
+
 setup_check_flow() {
   # Follow the README sequence, including PATH before the first login shell.
   run -0 setup_shell '
     # A machine may already have local configuration before its first setup.
     cp "$1/tests/fixtures/zsh/local.zsh" "$HOME/.zshrc.local"
+    mkdir -p "$HOME/.config/git"
+    cp "$1/tests/fixtures/git/local.config" "$HOME/.config/git/config.local"
     sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin"
     export PATH="$HOME/.local/bin:$PATH"
     git clone https://github.com/jinke5245/dotfiles.git "$HOME/dotfiles"
@@ -70,6 +99,7 @@ setup_check_flow() {
     test -f "$HOME/.oh-my-zsh/oh-my-zsh.sh"
     cmp home/dot_zshrc "$HOME/.zshrc"
     cmp tests/fixtures/zsh/local.zsh "$HOME/.zshrc.local"
+    cmp tests/fixtures/git/local.config "$HOME/.config/git/config.local"
   ' _ "$SETUP_SOURCE"
 
   run -0 setup_shell 'exec zsh -lic "$1" _ "$2"' _ '
@@ -91,10 +121,14 @@ setup_check_flow() {
     brew list --versions > "$HOME/.test-package-versions"
   '
 
+  setup_check_git_tools
+  setup_check_git_configuration
+
   # Snapshot managed and local configuration plus the installed framework.
   setup_shell '
     mkdir "$HOME/.test-before"
-    for file in .zprofile .zshrc .zshrc.local .oh-my-zsh/oh-my-zsh.sh; do
+    for file in .zprofile .zshrc .zshrc.local .oh-my-zsh/oh-my-zsh.sh \
+      .config/git/config .config/git/config.local .gitconfig; do
       cp -p "$HOME/$file" "$HOME/.test-before/$(basename "$file")"
     done
     printf "keep\n" > "$HOME/.oh-my-zsh/custom/personal-note"
@@ -111,7 +145,8 @@ setup_check_flow() {
     zsh -lc "brew list --versions" > "$HOME/.test-package-versions-after"
     cmp "$HOME/.test-package-versions" "$HOME/.test-package-versions-after"
 
-    for file in .zprofile .zshrc .zshrc.local .oh-my-zsh/oh-my-zsh.sh; do
+    for file in .zprofile .zshrc .zshrc.local .oh-my-zsh/oh-my-zsh.sh \
+      .config/git/config .config/git/config.local .gitconfig; do
       before="$HOME/.test-before/$(basename "$file")"
       cmp "$HOME/$file" "$before"
       test ! "$HOME/$file" -nt "$before"
@@ -119,4 +154,7 @@ setup_check_flow() {
     done
     test "$(cat "$HOME/.oh-my-zsh/custom/personal-note")" = keep
   '
+
+  setup_check_git_tools
+  setup_check_git_configuration
 }

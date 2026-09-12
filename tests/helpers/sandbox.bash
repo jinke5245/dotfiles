@@ -46,12 +46,13 @@ sandbox_chezmoi() (
   env -i \
     PATH="${SANDBOX_PATH:-$PATH}" \
     HOME="$SANDBOX_HOME" \
-    XDG_CONFIG_HOME="$SANDBOX_ROOT/config" \
+    XDG_CONFIG_HOME="$SANDBOX_HOME/.config" \
     XDG_CACHE_HOME="$SANDBOX_ROOT/cache" \
     XDG_DATA_HOME="$SANDBOX_ROOT/data" \
     XDG_STATE_HOME="$SANDBOX_ROOT/state" \
     TMPDIR="$SANDBOX_ROOT/tmp" \
     LC_ALL=C \
+    GIT_CONFIG_NOSYSTEM=1 \
     "$SANDBOX_CHEZMOI" \
     --source "$SANDBOX_REPOSITORY" \
     --destination "$SANDBOX_HOME" \

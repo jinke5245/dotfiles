@@ -4,7 +4,7 @@ See the root README for [development requirements](../README.md#requirements) an
 
 ## Suites
 
-Group integration suites by responsibility: `chezmoi`, `install`, `zsh`, and `harness` (test isolation and safety). Keep descriptive filenames, and organize scenarios within each file. Tests run independently of directory order.
+Group integration suites by responsibility: `chezmoi`, `install`, `git`, `zsh`, and `harness` (test isolation and safety). Keep descriptive filenames, and organize scenarios within each file. Tests run independently of directory order.
 
 | File                                                                                               | Coverage                                                                                                                            |
 | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
@@ -15,6 +15,9 @@ Group integration suites by responsibility: `chezmoi`, `install`, `zsh`, and `ha
 | [integration/install/setup-homebrew-action.bats](integration/install/setup-homebrew-action.bats)   | Linux prerequisites, installation, existing executables, repeated setup, GitHub PATH updates, and failure propagation.              |
 | [integration/install/install-brewfile.bats](integration/install/install-brewfile.bats)             | Brewfile installation, executable selection after setup, explicit repository paths, repeated apply, and failures.                   |
 | [integration/install/install-oh-my-zsh.bats](integration/install/install-oh-my-zsh.bats)           | Official installer invocation, existing installations, configuration preservation, managed paths, and failures.                     |
+| [integration/git/git-defaults.bats](integration/git/git-defaults.bats)                             | Configuration discovery, main branch, Chinese filenames, fast-forward-only pulls, pruning, and LFS filter settings.                 |
+| [integration/git/git-local.bats](integration/git/git-local.bats)                                   | Required identity, local and repository overrides, legacy configuration precedence, preservation, and Git / chezmoi exclusions.     |
+| [integration/git/git-credentials.bats](integration/git/git-credentials.bats)                       | GitHub / Gist helper routing, inherited-helper resets, unrelated URLs, local overrides, and unavailable credentials.                |
 | [integration/zsh/zsh-startup.bats](integration/zsh/zsh-startup.bats)                               | Zsh syntax, startup modes, Homebrew selection, PATH handling, and missing Oh My Zsh.                                                |
 | [integration/zsh/zsh-plugins.bats](integration/zsh/zsh-plugins.bats)                               | Completion auditing, plugin loading order, prefix discovery and absence, missing dependencies, and arrow bindings.                  |
 | [integration/zsh/zsh-local.bats](integration/zsh/zsh-local.bats)                                   | Local overrides, missing and unreadable files, startup modes, repeat-apply preservation, and Git / chezmoi exclusions.              |
@@ -23,9 +26,10 @@ Group integration suites by responsibility: `chezmoi`, `install`, `zsh`, and `ha
 | [integration/harness/setup-container-safety.bats](integration/harness/setup-container-safety.bats) | Container setup reports missing Docker and stops before attempting installation.                                                    |
 | [integration/harness/setup-macos-safety.bats](integration/harness/setup-macos-safety.bats)         | macOS setup refuses local, act, and self-hosted execution before installation or removal.                                           |
 | [e2e/chezmoi-flow.bats](e2e/chezmoi-flow.bats)                                                     | Real Oh My Zsh installation, native rendering, shell startup, local file preservation, repeat applies, and external script changes. |
+| [e2e/git-flow.bats](e2e/git-flow.bats)                                                             | Login-shell Git discovery, local identity preservation, real LFS filtering, and project setup without changing global files.        |
 | [e2e/zsh-plugins.bats](e2e/zsh-plugins.bats)                                                       | Completion initialization, real interactive plugin behavior, and local key-binding overrides.                                       |
-| [e2e/setup.bats](e2e/setup.bats)                                                                   | Documented first-time setup with real downloads, missing dependencies, login startup, and repeat application in Ubuntu.             |
-| [e2e/setup-macos.bats](e2e/setup-macos.bats)                                                       | The same first-time setup checks on a guarded GitHub-hosted macOS runner, including missing Homebrew.                               |
+| [e2e/setup.bats](e2e/setup.bats)                                                                   | Documented Ubuntu setup with real downloads, Git tooling paths and versions, login startup, and repeat application.                 |
+| [e2e/setup-macos.bats](e2e/setup-macos.bats)                                                       | The same setup and Git tooling checks on a guarded GitHub-hosted macOS runner, including missing Homebrew.                          |
 
 ## Running
 
@@ -60,6 +64,8 @@ Bats tags keep the suites separate: `test:e2e` excludes `network`, `test:setup` 
 
 Installation tests serve local installer fixtures instead of downloading scripts. System prefixes are relocated only in disposable repository copies; tests never install into real system directories.
 
+Git integration tests use real Git with a temporary HOME, a test-owned system configuration, and an empty inherited environment. Git discovers the deployed `~/.config/git/config` through its normal XDG lookup. Repositories and remotes are local; network Git protocols and credential prompts are disabled. A substitute `gh` exercises the credential protocol with synthetic values. LFS filter execution with real dependencies belongs to E2E coverage.
+
 Zsh platform cases use chezmoi data overrides and temporary installation paths. These cases do not replace native tests on each OS.
 
 `chezmoi-flow.bats` runs the real Oh My Zsh installer and Git fetch against a local snapshot of the supplied checkout's committed files. It installs only inside a temporary home, disables update checks, and blocks remote Git protocols and unexpected installer downloads.
@@ -69,6 +75,10 @@ This flow suite requires existing Homebrew and installed Brewfile packages. A co
 `zsh-plugins.bats` reuses that isolation and dependency adapter. The shared `helpers/zsh-pty.zsh` driver uses Zsh's built-in `zpty` module to send real keystrokes and read terminal output. A test-only redraw hook records the editing buffer and highlights without invoking plugin internals. Waits are bounded, the terminal is closed after each scenario, and all history, completion caches, and autojump data stay inside the temporary home and state directories.
 
 `setup.bats` starts with no chezmoi, Homebrew, or Oh My Zsh in a fresh Ubuntu container. Root only provisions a test account with sudo access; that ordinary user follows the README prerequisites and installation steps. It checks that Brewfile dependencies are satisfied and installed package versions remain unchanged after a second apply. A pre-existing `.zshrc.local` must take effect and survive both applies unchanged. `NONINTERACTIVE=1` answers Homebrew's unattended-installation prompts.
+
+After both applies, shared assertions check that `git`, `git-lfs`, `gh`, `glab`, and `tig` resolve from the expected Homebrew prefix in a fresh login shell and report their versions. Pre-existing Git identity and overrides must load from `config.local`; shared, local, and legacy Git files must survive reapplication unchanged.
+
+`git-flow.bats` uses the same isolated dependency adapter as the shell E2E suites. Both E2E and first-time setup source `helpers/git-flow.bash` inside a login shell to verify real LFS staging, pointer format, commit identity, and binary checkout. The round-trip uses shared filters before `git lfs install --local` verifies project setup and hook creation. All LFS objects stay in temporary repositories without remotes; no authentication is required.
 
 Repository copies use tracked files and nonignored untracked files from the current Git checkout, preserving uncommitted contents. Ignored local files, Git metadata, dependencies, and caches are excluded. A temporary local Git remote serves this snapshot under the documented clone URL; dependency downloads remain real. The Ubuntu setup container has no host directories, credentials, or Docker socket mounted, and teardown removes it on success or failure.
 
