@@ -55,6 +55,26 @@ setup_repository() {
   ' _ "$1"
 }
 
+setup_check_git_tools() {
+  # Check the expected installation, not a system copy elsewhere on PATH.
+  run -0 setup_shell 'exec zsh -lc "$1" _ "$2"' _ '
+    for tool in git git-lfs gh glab tig; do
+      expected="$1/bin/$tool"
+      actual="$(command -v "$tool")"
+      if [[ "$actual" != "$expected" ]]; then
+        print -u2 -r -- "$tool: expected $expected, got ${actual:-not found}"
+        exit 1
+      fi
+    done
+
+    git --version &&
+    git lfs version &&
+    gh --version &&
+    glab --version &&
+    tig --version
+  ' "$SETUP_BREW_PREFIX"
+}
+
 setup_check_flow() {
   # Follow the README sequence, including PATH before the first login shell.
   run -0 setup_shell '
@@ -91,6 +111,8 @@ setup_check_flow() {
     brew list --versions > "$HOME/.test-package-versions"
   '
 
+  setup_check_git_tools
+
   # Snapshot managed and local configuration plus the installed framework.
   setup_shell '
     mkdir "$HOME/.test-before"
@@ -119,4 +141,6 @@ setup_check_flow() {
     done
     test "$(cat "$HOME/.oh-my-zsh/custom/personal-note")" = keep
   '
+
+  setup_check_git_tools
 }

@@ -24,8 +24,8 @@ Group integration suites by responsibility: `chezmoi`, `install`, `zsh`, and `ha
 | [integration/harness/setup-macos-safety.bats](integration/harness/setup-macos-safety.bats)         | macOS setup refuses local, act, and self-hosted execution before installation or removal.                                           |
 | [e2e/chezmoi-flow.bats](e2e/chezmoi-flow.bats)                                                     | Real Oh My Zsh installation, native rendering, shell startup, local file preservation, repeat applies, and external script changes. |
 | [e2e/zsh-plugins.bats](e2e/zsh-plugins.bats)                                                       | Completion initialization, real interactive plugin behavior, and local key-binding overrides.                                       |
-| [e2e/setup.bats](e2e/setup.bats)                                                                   | Documented first-time setup with real downloads, missing dependencies, login startup, and repeat application in Ubuntu.             |
-| [e2e/setup-macos.bats](e2e/setup-macos.bats)                                                       | The same first-time setup checks on a guarded GitHub-hosted macOS runner, including missing Homebrew.                               |
+| [e2e/setup.bats](e2e/setup.bats)                                                                   | Documented Ubuntu setup with real downloads, Git tooling paths and versions, login startup, and repeat application.                 |
+| [e2e/setup-macos.bats](e2e/setup-macos.bats)                                                       | The same setup and Git tooling checks on a guarded GitHub-hosted macOS runner, including missing Homebrew.                          |
 
 ## Running
 
@@ -69,6 +69,8 @@ This flow suite requires existing Homebrew and installed Brewfile packages. A co
 `zsh-plugins.bats` reuses that isolation and dependency adapter. The shared `helpers/zsh-pty.zsh` driver uses Zsh's built-in `zpty` module to send real keystrokes and read terminal output. A test-only redraw hook records the editing buffer and highlights without invoking plugin internals. Waits are bounded, the terminal is closed after each scenario, and all history, completion caches, and autojump data stay inside the temporary home and state directories.
 
 `setup.bats` starts with no chezmoi, Homebrew, or Oh My Zsh in a fresh Ubuntu container. Root only provisions a test account with sudo access; that ordinary user follows the README prerequisites and installation steps. It checks that Brewfile dependencies are satisfied and installed package versions remain unchanged after a second apply. A pre-existing `.zshrc.local` must take effect and survive both applies unchanged. `NONINTERACTIVE=1` answers Homebrew's unattended-installation prompts.
+
+After both applies, shared assertions check that `git`, `git-lfs`, `gh`, `glab`, and `tig` resolve from the expected Homebrew prefix in a fresh login shell. Each tool must also report its version successfully; these checks require no authenticated accounts.
 
 Repository copies use tracked files and nonignored untracked files from the current Git checkout, preserving uncommitted contents. Ignored local files, Git metadata, dependencies, and caches are excluded. A temporary local Git remote serves this snapshot under the documented clone URL; dependency downloads remain real. The Ubuntu setup container has no host directories, credentials, or Docker socket mounted, and teardown removes it on success or failure.
 
