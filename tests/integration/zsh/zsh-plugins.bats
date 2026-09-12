@@ -30,6 +30,18 @@ setup() {
     autojump zsh-autosuggestions zsh-syntax-highlighting zsh-history-substring-search)" ]
 }
 
+@test "completion paths pass auditing when Homebrew's shared directory is group-writable" {
+  # Mirror the CI runner: a writable shared prefix, with secure formula files.
+  ln -s ../opt/zsh-completions/share/zsh-completions "$SANDBOX_ROOT/brew/share/zsh-completions"
+  chmod g+w "$SANDBOX_ROOT/brew/share"
+  cat "$SANDBOX_REPOSITORY/tests/fixtures/zsh/completion.zsh" \
+    >> "$SANDBOX_HOME/.oh-my-zsh/oh-my-zsh.sh"
+
+  run -0 sandbox_zsh -lic 'compaudit && print -r -- "${_comps[dotfiles-test]:-missing}"'
+
+  [ "$output" = _dotfiles-test ]
+}
+
 @test "nonlogin interactive shells discover Homebrew without initializing its environment" {
   run -0 sandbox_zsh -ic 'print -r -- "$HOMEBREW_PREFIX"'
 
@@ -64,9 +76,9 @@ setup() {
 }
 
 @test "reports missing plugin files while keeping the shell usable" {
-  rm -r "$SANDBOX_ROOT/brew/share" "$SANDBOX_ROOT/brew/etc"
+  rm -r "$SANDBOX_ROOT/brew/share" "$SANDBOX_ROOT/brew/etc" "$SANDBOX_ROOT/brew/opt"
 
-  run -0 --separate-stderr sandbox_zsh -lic '[[ $fpath != *"$HOMEBREW_PREFIX/share/zsh-completions"* ]] && print -r -- ready'
+  run -0 --separate-stderr sandbox_zsh -lic '[[ $fpath != *"$HOMEBREW_PREFIX/opt/zsh-completions/share/zsh-completions"* ]] && print -r -- ready'
 
   [ "$output" = ready ]
   [[ "$stderr" == *"$SANDBOX_ROOT/brew/etc/profile.d/autojump.sh"* ]] || return 1

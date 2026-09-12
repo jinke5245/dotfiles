@@ -23,7 +23,7 @@ setup() {
 @test "Oh My Zsh initializes completion exactly once with extra definitions available" {
   printf 'zmodload zsh/zprof\n' >> "$SANDBOX_HOME/.zshenv"
 
-  run -0 sandbox_zsh -lic '[[ ${_comps[http]} = _httpie ]] && zprof'
+  run -0 sandbox_zsh -lic 'compaudit && [[ ${_comps[http]} = _httpie ]] && zprof'
 
   local calls
   # zprof repeats each summary row in its call tree; count the first occurrence.

@@ -57,9 +57,9 @@ zsh_fixture_oh_my_zsh() {
 
 zsh_fixture_plugins() {
   local prefix="$1" plugin
-  mkdir -p "$prefix/share/zsh-completions"
+  mkdir -p "$prefix/opt/zsh-completions/share/zsh-completions"
   printf '#compdef dotfiles-test\n_arguments "--example[Example option]"\n' \
-    > "$prefix/share/zsh-completions/_dotfiles-test"
+    > "$prefix/opt/zsh-completions/share/zsh-completions/_dotfiles-test"
 
   # Homebrew exposes autojump through its shell-selecting profile entry point.
   mkdir -p "$prefix/etc/profile.d"

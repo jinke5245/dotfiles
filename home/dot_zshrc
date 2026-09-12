@@ -84,8 +84,9 @@ if [[ -z ${HOMEBREW_PREFIX:-} ]] && (( $+commands[brew] )); then
 fi
 
 # zsh-completions: add definitions before Oh My Zsh runs compinit.
-if [[ -n ${HOMEBREW_PREFIX:-} && -d "$HOMEBREW_PREFIX/share/zsh-completions" ]]; then
-  FPATH="$HOMEBREW_PREFIX/share/zsh-completions:$FPATH"
+# The formula's opt path avoids the shared prefix's group-writable parent.
+if [[ -n ${HOMEBREW_PREFIX:-} && -d "$HOMEBREW_PREFIX/opt/zsh-completions/share/zsh-completions" ]]; then
+  FPATH="$HOMEBREW_PREFIX/opt/zsh-completions/share/zsh-completions:$FPATH"
 fi
 
 # Keep the shell usable until oh-my-zsh has been installed.
