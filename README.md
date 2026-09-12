@@ -65,6 +65,8 @@ Each apply picks up changes to the Brewfile and installation scripts. Brewfile p
 
 ### Local customization
 
+#### Zsh
+
 Create `~/.zshrc.local` on each machine for local aliases, functions, environment variables, and key bindings. It loads last in interactive shells, so local settings take precedence:
 
 ```zsh
@@ -74,22 +76,36 @@ alias gst='git status --short'
 
 The file is optional and ignored by Git and chezmoi. Setup and apply neither create nor overwrite it.
 
+#### Git
+
+Shared defaults live in `~/.config/git/config`: new repositories use `main`, fetch prunes stale remote branches, pull requires a fast-forward, and Chinese filenames remain readable. Git LFS filters and GitHub / Gist HTTPS credential helpers are configured; `gh` resolves through PATH and requires device authentication.
+
+No default identity is provided. `user.useConfigOnly = true` requires an explicitly configured name and email for commits. After applying, set them in the optional local file:
+
+```sh
+git config --file ~/.config/git/config.local user.name "Your Name"
+git config --file ~/.config/git/config.local user.email "you@example.com"
+```
+
+`config.local` loads after shared defaults and can override them. Git and chezmoi ignore it; apply neither creates nor overwrites it. An existing `~/.gitconfig` is read afterward, and repository settings take precedence over these global files.
+
 ## Layout
 
 ```text
 .
-├── .chezmoiroot          # Selects home/ as the source root
-├── Brewfile              # Shared Homebrew packages
-├── home/                 # Chezmoi source state
-│   ├── .chezmoiignore    # Deployment exclusions
-│   ├── .chezmoiscripts/  # Chezmoi lifecycle adapters
-│   ├── dot_zprofile.tmpl # Login environment
-│   └── dot_zshrc         # Interactive shell
-├── scripts/              # Installation scripts
-│   ├── install.sh        # Entry point
-│   └── lib/              # Homebrew and Oh My Zsh functions
-├── tests/                # Behavior tests and helpers
-└── .github/workflows/    # CI checks
+├── .chezmoiroot           # Selects home/ as the source root
+├── Brewfile               # Shared Homebrew packages
+├── home/                  # Chezmoi source state
+│   ├── .chezmoiignore     # Deployment exclusions
+│   ├── .chezmoiscripts/   # Chezmoi lifecycle adapters
+│   ├── dot_config/git/    # Shared Git configuration
+│   ├── dot_zprofile.tmpl  # Login environment
+│   └── dot_zshrc          # Interactive shell
+├── scripts/               # Installation scripts
+│   ├── install.sh         # Entry point
+│   └── lib/               # Homebrew and Oh My Zsh functions
+├── tests/                 # Behavior tests and helpers
+└── .github/workflows/     # CI checks
 ```
 
 Chezmoi filename attributes define target paths: for example, `home/dot_zshrc` maps to `~/.zshrc`. Repository documentation, tooling, and `scripts/` stay outside the deployment source.
