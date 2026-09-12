@@ -3,8 +3,8 @@
 # These snippets expand in the isolated child shell, not in Bats.
 # shellcheck disable=SC2016
 
-load '../helpers/sandbox.bash'
-load '../helpers/install.bash'
+load '../../helpers/sandbox.bash'
+load '../../helpers/install.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0
@@ -69,6 +69,18 @@ EOF
 
   [ "$(cat "$SANDBOX_HOME/.zshrc")" = 'keep existing configuration' ]
   [ ! -e "$SANDBOX_HOME/.zprofile" ]
+}
+
+@test "a Bundle failure stops apply before managed files change" {
+  touch "$SANDBOX_HOME/.install-test/fail-bundle"
+  printf 'keep existing configuration\n' > "$SANDBOX_HOME/.zshrc"
+
+  run ! sandbox_chezmoi apply --force
+
+  [[ "$output" == *'Homebrew Bundle'* ]] || return 1
+  [ "$(cat "$SANDBOX_HOME/.zshrc")" = 'keep existing configuration' ]
+  [ ! -e "$SANDBOX_HOME/.zprofile" ]
+  [ ! -e "$SANDBOX_HOME/.install-test/oh-my-zsh.log" ]
 }
 
 @test "reapplying preserves configuration and does not reinstall dependencies" {

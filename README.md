@@ -36,7 +36,7 @@ chezmoi --source "$PWD" diff
 chezmoi --source "$PWD" apply
 ```
 
-Applying installs missing Homebrew and Oh My Zsh through their official installers, then writes the managed `.zprofile` and `.zshrc`. Existing installations are preserved; installation failures stop the apply. On Debian / Ubuntu, the script also installs [Homebrew's build prerequisites](https://docs.brew.sh/Homebrew-on-Linux).
+Applying prepares Homebrew, installs the packages declared in `Brewfile`, and installs Oh My Zsh before writing the managed `.zprofile` and `.zshrc`. Homebrew and Oh My Zsh use their official installers; installation failures stop the apply. On Debian / Ubuntu, the script also installs [Homebrew's build prerequisites](https://docs.brew.sh/Homebrew-on-Linux).
 
 Start a login Zsh to load the environment and interactive configuration:
 
@@ -45,6 +45,8 @@ exec zsh -l
 ```
 
 Login shells initialize Homebrew and PATH; interactive shells load Oh My Zsh with the `robbyrussell` theme and `git` plugin. Installation does not change the account's default shell. To select Zsh as the default, use `chsh -s "$(command -v zsh)"` separately.
+
+Shared integrations add extra completions, autojump (`j <directory-pattern>`), history-based suggestions (Right accepts), syntax highlighting, and substring history search (Up / Down). Extra completion definitions load before Oh My Zsh initializes completion; the other integrations load afterward. Brewfile supplies the required plugins; shell startup loads them directly when a Homebrew prefix is available and reports missing files without installing packages.
 
 ### Daily use
 
@@ -57,13 +59,25 @@ Run these commands from the repository root. Edit files under `home/`; changes m
 | Pull repository updates       | `git pull --ff-only`, then preview and apply |
 | Reload the login environment  | `exec zsh -l`                                |
 
-Each apply checks dependencies again and picks up changes to installation scripts. Homebrew and Oh My Zsh upgrades remain managed by their own update mechanisms.
+Each apply picks up changes to the Brewfile and installation scripts. Brewfile packages use `brew bundle install --no-upgrade`: missing packages are installed without requesting routine upgrades or removing other packages. Homebrew and Oh My Zsh upgrades remain managed by their own update mechanisms.
+
+### Local customization
+
+Create `~/.zshrc.local` on each machine for local aliases, functions, environment variables, and key bindings. It loads last in interactive shells, so local settings take precedence:
+
+```zsh
+export EDITOR=nvim
+alias gst='git status --short'
+```
+
+The file is optional and ignored by Git and chezmoi. Setup and apply neither create nor overwrite it.
 
 ## Layout
 
 ```text
 .
 ├── .chezmoiroot          # Selects home/ as the source root
+├── Brewfile              # Shared Homebrew packages
 ├── home/                 # Chezmoi source state
 │   ├── .chezmoiignore    # Deployment exclusions
 │   ├── .chezmoiscripts/  # Chezmoi lifecycle adapters

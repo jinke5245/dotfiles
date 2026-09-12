@@ -26,6 +26,7 @@ install_sandbox_create() {
     cp "$SANDBOX_REPOSITORY/tests/fixtures/install/$fixture-installer.bash" \
       "$SANDBOX_HOME/.install-test/$fixture-installer.bash"
   done
+  cp "$SANDBOX_REPOSITORY/tests/fixtures/install/brew.bash" "$SANDBOX_HOME/.install-test/brew.bash"
 
   # Redirect fixed system prefixes only in the disposable repository copy.
   sed \
@@ -69,11 +70,6 @@ install_sandbox_platform() {
 
 install_fixture_brew() {
   mkdir -p "$1/bin"
-
-  cat > "$1/bin/brew" << 'EOF'
-#!/bin/sh
-[ "$1" = --version ]
-EOF
-
+  cp "$SANDBOX_REPOSITORY/tests/fixtures/install/brew.bash" "$1/bin/brew"
   chmod +x "$1/bin/brew"
 }

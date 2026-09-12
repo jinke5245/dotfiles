@@ -55,8 +55,25 @@ zsh_fixture_oh_my_zsh() {
     "$SANDBOX_HOME/.oh-my-zsh/oh-my-zsh.sh"
 }
 
+zsh_fixture_plugins() {
+  local prefix="$1" plugin
+  mkdir -p "$prefix/opt/zsh-completions/share/zsh-completions"
+  printf '#compdef dotfiles-test\n_arguments "--example[Example option]"\n' \
+    > "$prefix/opt/zsh-completions/share/zsh-completions/_dotfiles-test"
+
+  # Homebrew exposes autojump through its shell-selecting profile entry point.
+  mkdir -p "$prefix/etc/profile.d"
+  cp "$SANDBOX_REPOSITORY/tests/fixtures/zsh/plugin.zsh" "$prefix/etc/profile.d/autojump.sh"
+
+  for plugin in zsh-autosuggestions zsh-syntax-highlighting zsh-history-substring-search; do
+    mkdir -p "$prefix/share/$plugin"
+    cp "$SANDBOX_REPOSITORY/tests/fixtures/zsh/plugin.zsh" "$prefix/share/$plugin/$plugin.zsh"
+  done
+}
+
 sandbox_zsh() (
   cd "$SANDBOX_ROOT" || return
+  # Python-based integrations must not write bytecode into installed packages.
   env -i \
     PATH="$SANDBOX_ZSH_PATH" \
     HOME="$SANDBOX_HOME" \
@@ -68,6 +85,7 @@ sandbox_zsh() (
     TMPDIR="$SANDBOX_ROOT/tmp" \
     TERM=xterm-256color \
     LC_ALL=C \
+    PYTHONDONTWRITEBYTECODE=1 \
     ZSH_TEST_BIN="$SANDBOX_ZSH" \
     ZSH_TEST_TRACE="$SANDBOX_ROOT/startup.log" \
     "$SANDBOX_ZSH" -d "$@"

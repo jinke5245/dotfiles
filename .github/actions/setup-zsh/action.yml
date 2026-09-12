@@ -1,0 +1,17 @@
+name: Set up Zsh
+description: Install Zsh on Ubuntu or verify it is available on macOS
+
+runs:
+  using: composite
+  steps:
+    - if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install --yes zsh
+    - if: runner.os == 'Linux'
+      shell: bash
+      run: sudo chmod go-w /usr/share/zsh
+    - if: runner.os == 'macOS'
+      shell: bash
+      run: command -v zsh

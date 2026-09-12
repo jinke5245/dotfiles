@@ -58,6 +58,8 @@ setup_repository() {
 setup_check_flow() {
   # Follow the README sequence, including PATH before the first login shell.
   run -0 setup_shell '
+    # A machine may already have local configuration before its first setup.
+    cp "$1/tests/fixtures/zsh/local.zsh" "$HOME/.zshrc.local"
     sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin"
     export PATH="$HOME/.local/bin:$PATH"
     git clone https://github.com/jinke5245/dotfiles.git "$HOME/dotfiles"
@@ -67,22 +69,32 @@ setup_check_flow() {
     chezmoi --source "$PWD" apply
     test -f "$HOME/.oh-my-zsh/oh-my-zsh.sh"
     cmp home/dot_zshrc "$HOME/.zshrc"
-  '
+    cmp tests/fixtures/zsh/local.zsh "$HOME/.zshrc.local"
+  ' _ "$SETUP_SOURCE"
 
   run -0 setup_shell 'exec zsh -lic "$1" _ "$2"' _ '
     [[ $HOMEBREW_PREFIX = "$1" ]] &&
     [[ $path[1] = "$HOME/bin" && $path[2] = "$HOME/.local/bin" ]] &&
     [[ $ZSH_THEME = robbyrussell ]] &&
-    [[ ${aliases[gst]} = "git status" ]] &&
+    [[ ${aliases[gst]} = "git status --short" ]] &&
+    [[ $EDITOR = nvim ]] &&
+    [[ $(project) = "$HOME/projects" ]] &&
+    [[ $(bindkey "^[[A") = *beginning-of-line ]] &&
     (( $+functions[compdef] )) &&
     brew --version >/dev/null && chezmoi --version >/dev/null
   ' "$SETUP_BREW_PREFIX"
   [ -z "$output" ]
 
-  # Snapshot both configuration and installed framework files before reapplying.
+  # Package-manager diagnostics are separate from a quiet shell startup.
+  run -0 setup_shell 'exec zsh -lc "$1"' _ '
+    brew bundle check --file="$HOME/dotfiles/Brewfile" --no-upgrade &&
+    brew list --versions > "$HOME/.test-package-versions"
+  '
+
+  # Snapshot managed and local configuration plus the installed framework.
   setup_shell '
     mkdir "$HOME/.test-before"
-    for file in .zprofile .zshrc .oh-my-zsh/oh-my-zsh.sh; do
+    for file in .zprofile .zshrc .zshrc.local .oh-my-zsh/oh-my-zsh.sh; do
       cp -p "$HOME/$file" "$HOME/.test-before/$(basename "$file")"
     done
     printf "keep\n" > "$HOME/.oh-my-zsh/custom/personal-note"
@@ -92,9 +104,14 @@ setup_check_flow() {
     export PATH="$HOME/.local/bin:$PATH"
     cd "$HOME/dotfiles"
     chezmoi --source "$PWD" apply
-    chezmoi --source "$PWD" diff --exclude scripts
+    configuration_diff="$(chezmoi --source "$PWD" diff --exclude scripts)"
+    test -z "$configuration_diff"
 
-    for file in .zprofile .zshrc .oh-my-zsh/oh-my-zsh.sh; do
+    # Repeated apply must not request upgrades of already installed packages.
+    zsh -lc "brew list --versions" > "$HOME/.test-package-versions-after"
+    cmp "$HOME/.test-package-versions" "$HOME/.test-package-versions-after"
+
+    for file in .zprofile .zshrc .zshrc.local .oh-my-zsh/oh-my-zsh.sh; do
       before="$HOME/.test-before/$(basename "$file")"
       cmp "$HOME/$file" "$before"
       test ! "$HOME/$file" -nt "$before"
@@ -102,5 +119,4 @@ setup_check_flow() {
     done
     test "$(cat "$HOME/.oh-my-zsh/custom/personal-note")" = keep
   '
-  [ -z "$output" ]
 }

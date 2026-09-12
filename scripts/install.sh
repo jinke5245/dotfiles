@@ -3,8 +3,9 @@
 set -euo pipefail
 
 main() {
-  local script_dir
+  local script_dir repository_root
   script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+  repository_root="$(cd "$script_dir/.." && pwd -P)"
 
   # shellcheck source=scripts/lib/homebrew.sh
   source "$script_dir/lib/homebrew.sh"
@@ -12,6 +13,7 @@ main() {
   source "$script_dir/lib/oh-my-zsh.sh"
 
   install_homebrew
+  install_homebrew_packages "$repository_root/Brewfile"
   install_oh_my_zsh
 }
 

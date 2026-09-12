@@ -1,0 +1,10 @@
+name: Set up chezmoi
+description: Install chezmoi and add it to PATH
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin"
+    - shell: bash
+      run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"

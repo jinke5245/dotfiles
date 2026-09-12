@@ -12,7 +12,7 @@ setup_file() {
   # shellcheck disable=SC2016
   run -1 env -i HOME="$BATS_TEST_TMPDIR/home" PATH="$BATS_TEST_TMPDIR/bin" \
     /bin/bash --noprofile --norc -c \
-    'source "$1"; setup_container_create' _ "$BATS_TEST_DIRNAME/../helpers/setup.bash"
+    'source "$1"; setup_container_create' _ "$BATS_TEST_DIRNAME/../../helpers/setup.bash"
 
   [[ "$output" == *'Docker is required'* ]]
   [[ "$output" != *'command not found'* ]]

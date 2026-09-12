@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-load '../helpers/sandbox.bash'
+load '../../helpers/sandbox.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0
@@ -37,7 +37,7 @@ setup() {
   run -0 sandbox_chezmoi apply --exclude scripts
 
   local entry
-  for entry in README.md package.json scripts tests .chezmoiscripts; do
+  for entry in README.md Brewfile package.json scripts tests .chezmoiscripts; do
     if [ -e "$SANDBOX_HOME/$entry" ] || [ -L "$SANDBOX_HOME/$entry" ]; then
       printf 'Unexpected deployed repository entry: %s\n' "$entry" >&2
       return 1
