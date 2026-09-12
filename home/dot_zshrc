@@ -1,4 +1,8 @@
-# Based on https://github.com/ohmyzsh/ohmyzsh/blob/master/templates/zshrc.zsh-template
+################################################################################
+#
+# https://github.com/ohmyzsh/ohmyzsh/blob/master/templates/zshrc.zsh-template
+#
+################################################################################
 
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
@@ -74,14 +78,26 @@ ZSH_THEME="robbyrussell"
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(git)
 
+# Reuse the login environment; standalone interactive shells only query the prefix.
+if [[ -z ${HOMEBREW_PREFIX:-} ]] && (( $+commands[brew] )); then
+  export HOMEBREW_PREFIX="$(brew --prefix 2>/dev/null)"
+fi
+
+# zsh-completions: add definitions before Oh My Zsh runs compinit.
+if [[ -n ${HOMEBREW_PREFIX:-} && -d "$HOMEBREW_PREFIX/share/zsh-completions" ]]; then
+  FPATH="$HOMEBREW_PREFIX/share/zsh-completions:$FPATH"
+fi
+
 # Keep the shell usable until oh-my-zsh has been installed.
 if [[ -r "$ZSH/oh-my-zsh.sh" ]]; then
   source "$ZSH/oh-my-zsh.sh"
-else
-  print -u2 -- "Oh My Zsh is missing at $ZSH; install it to enable the configured shell."
 fi
 
+################################################################################
+#
 # User configuration
+#
+################################################################################
 
 # export MANPATH="/usr/local/man:$MANPATH"
 
@@ -110,5 +126,32 @@ fi
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
+################################################################################
+#
 # Personal additions
-# Add personal aliases, functions, key bindings, and overrides below.
+#
+################################################################################
+
+# autojump
+source "$HOMEBREW_PREFIX/etc/profile.d/autojump.sh"
+
+# zsh-autosuggestions
+source "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+
+# zsh-syntax-highlighting
+source "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+
+# zsh-history-substring-search: load after syntax highlighting, as upstream recommends.
+source "$HOMEBREW_PREFIX/share/zsh-history-substring-search/zsh-history-substring-search.zsh"
+
+# Support terminal-specific arrows and the common normal/application sequences.
+if (( $+widgets[history-substring-search-up] )); then
+  zmodload zsh/terminfo
+  for zsh_key in "$terminfo[kcuu1]" '^[[A' '^[OA'; do
+    [[ -n "$zsh_key" ]] && bindkey "$zsh_key" history-substring-search-up
+  done
+  for zsh_key in "$terminfo[kcud1]" '^[[B' '^[OB'; do
+    [[ -n "$zsh_key" ]] && bindkey "$zsh_key" history-substring-search-down
+  done
+  unset zsh_key
+fi

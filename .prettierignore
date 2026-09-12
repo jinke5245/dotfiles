@@ -12,3 +12,5 @@
 
 # zsh syntax is checked with zsh
 *.zsh
+*zshrc*
+*zprofile*
