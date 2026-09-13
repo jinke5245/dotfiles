@@ -123,6 +123,29 @@ git add .gitattributes
 
 Commit `.gitattributes` with the matching files. `--local` keeps project setup from writing global configuration; tracking does not convert existing history.
 
+### SSH keys
+
+Each apply checks `~/.ssh/id_ed25519` and `~/.ssh/id_ed25519.pub`:
+
+| Existing files   | Behavior                                                  |
+| ---------------- | --------------------------------------------------------- |
+| Neither          | Generate a new Ed25519 key pair.                          |
+| Both             | Preserve the files and their permissions.                 |
+| Private key only | Recover the public key without changing the private key.  |
+| Public key only  | Stop with an error; resolve the incomplete pair manually. |
+
+New keys have no passphrase and use the default `user@hostname` comment. Newly created permissions are `700` for `.ssh`, `600` for the private key, and `644` for the public key. Existing directories, keys at other paths, and their permissions remain unchanged.
+
+Recovering a public key from an encrypted private key may prompt for its existing passphrase. If recovery fails, apply stops without creating an empty public-key file.
+
+Keys stay on the device; keep them outside Git and the chezmoi source state. Inspect the public-key fingerprint with:
+
+```sh
+ssh-keygen -lf ~/.ssh/id_ed25519.pub
+```
+
+Register the public key with your Git host or servers separately.
+
 ## Layout
 
 ```text
