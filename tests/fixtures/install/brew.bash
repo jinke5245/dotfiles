@@ -29,3 +29,8 @@ fi
 
 cat "${3#--file=}" > "$HOME/.install-test/bundle-input"
 printf 'install\n' >> "$HOME/.install-test/bundle.log"
+
+if grep -Fxq 'brew "fnm"' "$HOME/.install-test/bundle-input"; then
+  cp "$HOME/.install-test/fnm.bash" "${0%/brew}/fnm"
+  chmod +x "${0%/brew}/fnm"
+fi

@@ -113,3 +113,27 @@ EOF
 
   [ "$(cat "$SANDBOX_HOME/script-runs")" = "$(printf 'library\nentry')" ]
 }
+
+@test "offline apply enables pnpm inside the copied Node installation" {
+  cp -p "$NODE_FLOW_RUNTIME/bin/node" "$SANDBOX_ROOT/node.before"
+  cp -p "$NODE_FLOW_RUNTIME/lib/node_modules/corepack/dist/corepack.js" "$SANDBOX_ROOT/corepack.before"
+
+  run -0 sandbox_chezmoi apply
+  run -0 sandbox_chezmoi apply
+
+  [ -x "$NODE_FLOW_RUNTIME/bin/pnpm" ]
+  cmp "$NODE_FLOW_RUNTIME/bin/node" "$SANDBOX_ROOT/node.before"
+  cmp "$NODE_FLOW_RUNTIME/lib/node_modules/corepack/dist/corepack.js" "$SANDBOX_ROOT/corepack.before"
+  [ ! "$NODE_FLOW_RUNTIME/bin/node" -nt "$SANDBOX_ROOT/node.before" ]
+}
+
+@test "offline apply refuses a runtime download when the prepared default is missing" {
+  local fnm_directory="${NODE_FLOW_RUNTIME%/node-versions/*}"
+  rm "$fnm_directory/aliases/default"
+
+  run ! sandbox_chezmoi apply
+
+  [[ "$output" == *'file:///dev/null'* ]] || return 1
+  [ ! -e "$fnm_directory/aliases/default" ]
+  [ ! -e "$SANDBOX_HOME/.zprofile" ]
+}

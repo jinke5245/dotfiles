@@ -3,6 +3,9 @@
 # Scenario variables are consumed by Bats and the shared Zsh helper.
 # shellcheck disable=SC2034
 
+# shellcheck source=tests/helpers/node-flow.bash
+source "$(dirname "${BASH_SOURCE[0]}")/node-flow.bash"
+
 flow_suite_setup() {
   if [ -z "${OMZ_SOURCE:-}" ] || [ ! -f "$OMZ_SOURCE/oh-my-zsh.sh" ]; then
     printf 'Set OMZ_SOURCE to a local Oh My Zsh Git checkout before running e2e tests.\n' >&2
@@ -53,5 +56,6 @@ flow_sandbox_create() {
 
   FLOW_BREW_PREFIX="$(env -i HOME="$SANDBOX_HOME" PATH="$SANDBOX_PATH" brew --prefix)"
 
+  node_flow_prepare || return
   sandbox_init
 }

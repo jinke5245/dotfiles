@@ -10,6 +10,8 @@ main() {
 
   # shellcheck source=scripts/lib/homebrew.sh
   source "$script_dir/lib/homebrew.sh"
+  # shellcheck source=scripts/lib/node.sh
+  source "$script_dir/lib/node.sh"
   # shellcheck source=scripts/lib/oh-my-zsh.sh
   source "$script_dir/lib/oh-my-zsh.sh"
   # shellcheck source=scripts/lib/git.sh
@@ -19,6 +21,7 @@ main() {
 
   install_homebrew
   install_homebrew_packages "$repository_root/Brewfile"
+  initialize_node
   install_oh_my_zsh
   initialize_git_identity "$user_name" "$user_email"
   initialize_ssh_keys "$user_email"

@@ -17,6 +17,7 @@ setup() {
 @test "sourcing installation libraries has no installation side effects" {
   run -0 install_sandbox_run bash -c '
     source "$1/lib/homebrew.sh" &&
+      source "$1/lib/node.sh" &&
       source "$1/lib/oh-my-zsh.sh" &&
       source "$1/lib/git.sh" &&
       source "$1/lib/ssh.sh"
@@ -28,6 +29,7 @@ setup() {
   [ ! -e "$SANDBOX_HOME/.oh-my-zsh" ]
   [ ! -e "$SANDBOX_HOME/.ssh" ]
   [ ! -e "$SANDBOX_HOME/.config/git/config.local" ]
+  [ ! -e "$SANDBOX_HOME/.install-test/fnm.log" ]
 }
 
 @test "chezmoi installs dependencies before writing managed configuration" {
