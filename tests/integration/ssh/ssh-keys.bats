@@ -116,3 +116,65 @@ setup() {
   [[ "$output" == *'.ssh'* ]]
   ssh_assert_preserved "$SANDBOX_HOME/.ssh" "$SANDBOX_ROOT/ssh.before"
 }
+
+@test "rejects directories at either key path even when the other key exists" {
+  ssh_fixture_key
+  local key
+
+  for key in "$SANDBOX_SSH_KEY" "$SANDBOX_SSH_KEY.pub"; do
+    mv "$key" "$SANDBOX_ROOT/key.before"
+    mkdir -m 750 "$key"
+    printf 'keep directory contents\n' > "$key/keep"
+
+    run ! ssh_sandbox_initialize
+
+    [[ "$output" == *"$key"* ]]
+    [ "$(ssh_file_mode "$key")" = 750 ]
+    [ "$(cat "$key/keep")" = 'keep directory contents' ]
+
+    rm "$key/keep"
+    rmdir "$key"
+    mv "$SANDBOX_ROOT/key.before" "$key"
+  done
+
+  ssh_assert_key_pair
+}
+
+@test "rejects dangling symlinks at either key path even when the other key exists" {
+  ssh_fixture_key
+  local key
+
+  for key in "$SANDBOX_SSH_KEY" "$SANDBOX_SSH_KEY.pub"; do
+    mv "$key" "$SANDBOX_ROOT/key.before"
+    ln -s "$SANDBOX_ROOT/absent-key" "$key"
+
+    run ! ssh_sandbox_initialize
+
+    [[ "$output" == *"$key"* ]]
+    [ -L "$key" ]
+    [ "$(readlink "$key")" = "$SANDBOX_ROOT/absent-key" ]
+    [ ! -e "$SANDBOX_ROOT/absent-key" ]
+
+    rm "$key"
+    mv "$SANDBOX_ROOT/key.before" "$key"
+  done
+
+  ssh_assert_key_pair
+}
+
+@test "preserves a complete key pair reached through valid symlinks" {
+  ssh_fixture_key 'existing test passphrase'
+  mv "$SANDBOX_SSH_KEY" "$SANDBOX_ROOT/private-target"
+  mv "$SANDBOX_SSH_KEY.pub" "$SANDBOX_ROOT/public-target"
+  cp -p "$SANDBOX_ROOT/private-target" "$SANDBOX_ROOT/private.before"
+  cp -p "$SANDBOX_ROOT/public-target" "$SANDBOX_ROOT/public.before"
+  ln -s "$SANDBOX_ROOT/private-target" "$SANDBOX_SSH_KEY"
+  ln -s "$SANDBOX_ROOT/public-target" "$SANDBOX_SSH_KEY.pub"
+
+  run -0 ssh_sandbox_initialize
+
+  [ "$(readlink "$SANDBOX_SSH_KEY")" = "$SANDBOX_ROOT/private-target" ]
+  [ "$(readlink "$SANDBOX_SSH_KEY.pub")" = "$SANDBOX_ROOT/public-target" ]
+  ssh_assert_preserved "$SANDBOX_ROOT/private-target" "$SANDBOX_ROOT/private.before"
+  ssh_assert_preserved "$SANDBOX_ROOT/public-target" "$SANDBOX_ROOT/public.before"
+}

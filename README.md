@@ -136,7 +136,9 @@ Each apply checks `~/.ssh/id_ed25519` and `~/.ssh/id_ed25519.pub`:
 
 New keys have no passphrase and use the default `user@hostname` comment. Newly created permissions are `700` for `.ssh`, `600` for the private key, and `644` for the public key. Existing directories, keys at other paths, and their permissions remain unchanged.
 
-Recovering a public key from an encrypted private key may prompt for its existing passphrase. If recovery fails, apply stops without creating an empty public-key file.
+Key paths must be regular files or symlinks to regular files. Conflicting directories and dangling symlinks stop apply without being replaced.
+
+Public-key recovery requires an Ed25519 private key and may prompt for its existing passphrase. If recovery fails, apply stops without creating a public-key file.
 
 Keys stay on the device; keep them outside Git and the chezmoi source state. Inspect the public-key fingerprint with:
 

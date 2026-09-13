@@ -86,3 +86,19 @@ setup() {
   [ "$(cat "$SANDBOX_HOME/.zshrc")" = 'keep existing configuration' ]
   [ ! -e "$SANDBOX_HOME/.zprofile" ]
 }
+
+@test "a conflicting public-key path stops apply before managed configuration changes" {
+  ssh_fixture_key
+  rm "$SANDBOX_SSH_KEY.pub"
+  mkdir "$SANDBOX_SSH_KEY.pub"
+  cp -p "$SANDBOX_SSH_KEY" "$SANDBOX_ROOT/private.before"
+  printf 'keep existing configuration\n' > "$SANDBOX_HOME/.zshrc"
+
+  run ! sandbox_chezmoi apply --force
+
+  [[ "$output" == *id_ed25519.pub* ]]
+  [ -d "$SANDBOX_SSH_KEY.pub" ]
+  ssh_assert_preserved "$SANDBOX_SSH_KEY" "$SANDBOX_ROOT/private.before"
+  [ "$(cat "$SANDBOX_HOME/.zshrc")" = 'keep existing configuration' ]
+  [ ! -e "$SANDBOX_HOME/.zprofile" ]
+}

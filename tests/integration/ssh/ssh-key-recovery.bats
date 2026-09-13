@@ -96,3 +96,24 @@ setup() {
   [ ! -e "$SANDBOX_ROOT/absent-key" ]
   [ ! -e "$SANDBOX_SSH_KEY.pub" ]
 }
+
+@test "rejects non-Ed25519 private keys without writing a public key" {
+  mkdir -m 700 "$SANDBOX_HOME/.ssh"
+  local algorithm
+
+  # ssh-keygen accepts both algorithms; recovery must enforce Ed25519 itself.
+  for algorithm in rsa ecdsa; do
+    ssh_sandbox_run ssh-keygen -q -t "$algorithm" -N '' -f "$SANDBOX_SSH_KEY"
+    rm "$SANDBOX_SSH_KEY.pub"
+    chmod 400 "$SANDBOX_SSH_KEY"
+    cp -p "$SANDBOX_SSH_KEY" "$SANDBOX_ROOT/$algorithm.before"
+
+    run ! ssh_sandbox_initialize
+
+    [[ "$output" == *Ed25519* ]]
+    [ ! -e "$SANDBOX_SSH_KEY.pub" ]
+    ssh_assert_preserved "$SANDBOX_SSH_KEY" "$SANDBOX_ROOT/$algorithm.before"
+
+    rm -f "$SANDBOX_SSH_KEY"
+  done
+}

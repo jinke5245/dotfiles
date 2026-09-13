@@ -6,9 +6,17 @@ initialize_ssh_keys() {
   private_key="$ssh_dir/id_ed25519"
   public_key="$private_key.pub"
 
-  # A dangling symlink is still an existing path and must not be overwritten.
-  if [[ -e "$public_key" || -L "$public_key" ]]; then
-    if [[ -e "$private_key" || -L "$private_key" ]]; then
+  # Follow valid file symlinks, but preserve and report conflicting paths.
+  local key
+  for key in "$private_key" "$public_key"; do
+    if [[ (-e "$key" || -L "$key") && ! -f "$key" ]]; then
+      printf 'SSH: %s is not a regular file; resolve this manually.\n' "$key" >&2
+      return 1
+    fi
+  done
+
+  if [[ -f "$public_key" ]]; then
+    if [[ -f "$private_key" ]]; then
       return 0
     fi
 
@@ -16,11 +24,15 @@ initialize_ssh_keys() {
     return 1
   fi
 
-  if [[ -e "$private_key" || -L "$private_key" ]]; then
+  if [[ -f "$private_key" ]]; then
     local recovered_public_key
     # Read successfully before creating the file. Encrypted keys may prompt
     # for their existing passphrase; a failed read must leave no empty .pub.
     recovered_public_key="$(ssh-keygen -y -f "$private_key")" || return
+    if [[ "$recovered_public_key" != ssh-ed25519\ * ]]; then
+      printf 'SSH: %s is not an Ed25519 private key; resolve this manually.\n' "$private_key" >&2
+      return 1
+    fi
 
     # Preserve a public key that may have appeared while waiting for input.
     (
