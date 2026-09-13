@@ -70,6 +70,8 @@ Bats tags keep the suites separate: `test:e2e` excludes `network`, `test:setup` 
 
 Identity initialization tests run real chezmoi and Git with temporary homes, configuration, and source copies. Synthetic values exercise native prompts and unattended inputs; initialization must leave Git files unchanged and never run installers or generate SSH keys.
 
+Global identity lookup covers legacy and XDG files together, includes, per-field precedence, and empty-value fallback. A test-owned system configuration verifies that system identity is excluded; repository settings and repository-dependent includes must also be excluded.
+
 Installation tests serve local installer fixtures instead of downloading scripts. System prefixes are relocated only in disposable repository copies; tests never install into real system directories.
 
 Git integration tests use real Git with a temporary HOME, a test-owned system configuration, and an empty inherited environment. Git discovers the deployed `~/.config/git/config` through its normal XDG lookup. Repositories and remotes are local; network Git protocols and credential prompts are disabled. A substitute `gh` exercises the credential protocol with synthetic values. LFS filter execution with real dependencies belongs to E2E coverage.

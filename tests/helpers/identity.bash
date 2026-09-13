@@ -26,3 +26,11 @@ name = "Saved Name"
 email = "saved@example.invalid"
 TOML
 }
+
+identity_xdg_configuration() {
+  local directory="$SANDBOX_HOME/.config/git"
+  mkdir -p "$directory"
+  sandbox_git config --file "$directory/config" include.path config.local
+  sandbox_git config --file "$directory/config.local" user.name 'Included Name'
+  sandbox_git config --file "$directory/config.local" user.email included@example.invalid
+}

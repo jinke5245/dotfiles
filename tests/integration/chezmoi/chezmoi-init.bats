@@ -51,14 +51,63 @@ setup() {
 }
 
 @test "init reads identity from included XDG Git configuration" {
-  mkdir -p "$SANDBOX_HOME/.config/git"
-  sandbox_git config --file "$SANDBOX_HOME/.config/git/config" include.path config.local
-  sandbox_git config --file "$SANDBOX_HOME/.config/git/config.local" user.name 'Included Name'
-  sandbox_git config --file "$SANDBOX_HOME/.config/git/config.local" user.email included@example.invalid
+  identity_xdg_configuration
 
   run -0 identity_init < /dev/null
 
   identity_assert_data 'Included Name' included@example.invalid
+}
+
+@test "init prefers XDG identity over saved inputs when legacy Git settings exist" {
+  identity_saved_data
+  identity_xdg_configuration
+  sandbox_git config --file "$SANDBOX_HOME/.gitconfig" core.editor vim
+
+  run -0 identity_init < /dev/null
+
+  identity_assert_data 'Included Name' included@example.invalid
+}
+
+@test "init resolves identity fields split between both global Git files" {
+  identity_saved_data
+  mkdir -p "$SANDBOX_HOME/.config/git"
+  sandbox_git config --file "$SANDBOX_HOME/.config/git/config" user.email xdg@example.invalid
+  sandbox_git config --file "$SANDBOX_HOME/.gitconfig" user.name 'Legacy Name'
+
+  run -0 identity_init < /dev/null
+
+  identity_assert_data 'Legacy Name' xdg@example.invalid
+}
+
+@test "init gives legacy Git identity precedence over included XDG values" {
+  identity_saved_data
+  identity_xdg_configuration
+  sandbox_git config --file "$SANDBOX_HOME/.gitconfig" user.name 'Legacy Name'
+  sandbox_git config --file "$SANDBOX_HOME/.gitconfig" user.email legacy@example.invalid
+
+  run -0 identity_init < /dev/null
+
+  identity_assert_data 'Legacy Name' legacy@example.invalid
+}
+
+@test "init falls back to saved email when the higher-priority Git email is empty" {
+  identity_saved_data
+  identity_xdg_configuration
+  sandbox_git config --file "$SANDBOX_HOME/.gitconfig" user.email ''
+
+  run -0 identity_init < /dev/null
+
+  identity_assert_data 'Included Name' saved@example.invalid
+}
+
+@test "init excludes system Git identity from initialization inputs" {
+  identity_saved_data
+  sandbox_git config --file "$SANDBOX_GIT_SYSTEM" user.name 'System Name'
+  sandbox_git config --file "$SANDBOX_GIT_SYSTEM" user.email system@example.invalid
+
+  run -0 identity_init < /dev/null
+
+  identity_assert_data 'Saved Name' saved@example.invalid
 }
 
 @test "init fails without replacing saved configuration when required input is unavailable" {
@@ -140,6 +189,20 @@ ANSWERS
   run ! identity_init < /dev/null
 
   [[ "$output" == *'gitconfig'* ]]
+  cmp "$SANDBOX_CONFIG" "$SANDBOX_ROOT/config.before"
+}
+
+@test "init rejects malformed XDG configuration even when legacy identity is valid" {
+  identity_saved_data
+  sandbox_git config --file "$SANDBOX_HOME/.gitconfig" user.name 'Legacy Name'
+  sandbox_git config --file "$SANDBOX_HOME/.gitconfig" user.email legacy@example.invalid
+  mkdir -p "$SANDBOX_HOME/.config/git"
+  printf '[broken\n' > "$SANDBOX_HOME/.config/git/config"
+  cp -p "$SANDBOX_CONFIG" "$SANDBOX_ROOT/config.before"
+
+  run ! identity_init < /dev/null
+
+  [[ "$output" == *'.config/git/config'* ]]
   cmp "$SANDBOX_CONFIG" "$SANDBOX_ROOT/config.before"
 }
 

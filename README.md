@@ -39,7 +39,7 @@ chezmoi --source "$PWD" diff
 chezmoi --source "$PWD" apply
 ```
 
-For each identity field, `init` first reads global Git configuration (including includes, outside any repository), then reuses saved values, and prompts only if still missing. It saves the name and email under `[data.user]` in `~/.config/chezmoi/chezmoi.toml`, outside the repository. `diff` and `apply` do not prompt for identity.
+For each identity field, `init` reads both global Git files and their includes in Git's normal order, then reuses saved values, and prompts only if still missing. System and repository settings are excluded. It saves the name and email under `[data.user]` in `~/.config/chezmoi/chezmoi.toml`, outside the repository. `diff` and `apply` do not prompt for identity.
 
 For unattended setup, replace the `init` command with supplied answers; existing global or saved values still take precedence:
 
