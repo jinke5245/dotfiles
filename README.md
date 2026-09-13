@@ -39,7 +39,9 @@ chezmoi --source "$PWD" diff
 chezmoi --source "$PWD" apply
 ```
 
-For each identity field, `init` reads both global Git files and their includes in Git's normal order, then reuses saved values, and prompts only if still missing. System and repository settings are excluded. It saves the name and email under `[data.user]` in `~/.config/chezmoi/chezmoi.toml`, outside the repository. `diff` and `apply` do not prompt for identity.
+For each identity field, `init` reads both default global Git files and their includes in Git's normal order, then reuses saved values, and prompts only if still missing. System and repository settings, environment-selected Git files, and command-scope overrides are excluded. It saves the name and email under `[data.user]` in `~/.config/chezmoi/chezmoi.toml`, outside the repository. `diff` and `apply` do not prompt for identity.
+
+Repeated `init` preserves unrelated chezmoi settings but regenerates the TOML file; its comments and formatting are not retained.
 
 For unattended setup, replace the `init` command with supplied answers; existing global or saved values still take precedence:
 
@@ -101,7 +103,7 @@ These paths use Git's default XDG location: `XDG_CONFIG_HOME` must be unset or p
 1. Review and back up existing `~/.gitconfig` and `~/.config/git/config`. Inspect global settings and their sources:
 
    ```sh
-   env -u GIT_CONFIG -u GIT_CONFIG_PARAMETERS \
+   env -u GIT_CONFIG -u GIT_CONFIG_GLOBAL -u GIT_CONFIG_PARAMETERS \
      GIT_CONFIG_COUNT=0 GIT_CONFIG_NOSYSTEM=1 \
      git --git-dir=/dev/null config --includes --list --show-origin
    ```
@@ -155,7 +157,7 @@ Each apply checks `~/.ssh/id_ed25519` and `~/.ssh/id_ed25519.pub`:
 | Private key only | Recover the public key without changing the private key.  |
 | Public key only  | Stop with an error; resolve the incomplete pair manually. |
 
-New keys have no passphrase. Their comment uses the email saved under `[data.user]`; if absent or empty, generation omits `-C` and keeps the default `user@hostname` comment. SSH initialization does not query Git, and existing or recovered keys keep their original comments.
+New keys have no passphrase. Their comment uses the email saved under `[data.user]`; if absent or empty, generation omits `-C` and keeps the default `user@hostname` comment. SSH initialization does not query Git. Existing key pairs remain unchanged; public-key recovery uses the comment stored in the private key.
 
 Newly created permissions are `700` for `.ssh`, `600` for the private key, and `644` for the public key. Existing directories, keys at other paths, and their permissions remain unchanged.
 

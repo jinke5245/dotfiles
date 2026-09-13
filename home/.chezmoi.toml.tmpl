@@ -7,8 +7,8 @@
 {{- $user := get . "user" | default dict -}}
 
 {{- range $field := list "name" "email" -}}
-{{- /* Read global files without repository discovery or command-scope overrides. */ -}}
-{{- $value := output "env" "-u" "GIT_CONFIG" "-u" "GIT_CONFIG_PARAMETERS"
+{{- /* Read default global files without repository discovery or environment overrides. */ -}}
+{{- $value := output "env" "-u" "GIT_CONFIG" "-u" "GIT_CONFIG_GLOBAL" "-u" "GIT_CONFIG_PARAMETERS"
     "GIT_CONFIG_COUNT=0" "GIT_CONFIG_NOSYSTEM=1"
     "git" "--git-dir=/dev/null" "config" "--includes" "--default" "" "--get" (printf "user.%s" $field) | trim -}}
 {{- if not $value -}}

@@ -279,6 +279,17 @@ ANSWERS
   identity_assert_data 'Global Name' global@example.invalid
 }
 
+@test "init reads both default global files despite GIT_CONFIG_GLOBAL" {
+  identity_xdg_configuration
+  sandbox_git config --file "$SANDBOX_HOME/.gitconfig" user.name 'Legacy Name'
+  sandbox_git config --file "$SANDBOX_ROOT/override.config" user.name 'Override Name'
+  sandbox_git config --file "$SANDBOX_ROOT/override.config" user.email override@example.invalid
+
+  run -0 identity_init_with_env GIT_CONFIG_GLOBAL="$SANDBOX_ROOT/override.config" < /dev/null
+
+  identity_assert_data 'Legacy Name' included@example.invalid
+}
+
 @test "preview and configuration-only apply do not repeat identity prompts" {
   identity_saved_data
   identity_init < /dev/null
