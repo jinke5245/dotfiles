@@ -6,7 +6,7 @@ Personal dotfiles for macOS and Linux, managed with [chezmoi](https://www.chezmo
 
 ### Prerequisites
 
-Use a regular user account on macOS or Debian / Ubuntu, with network access and administrator permissions for dependency installation. Bash, Git, curl, and Zsh must be available before applying configuration.
+Use a regular user account on macOS or Debian / Ubuntu, with network access and administrator permissions for dependency installation. Bash, Git, curl, Zsh, and `ssh-keygen` must be available before applying configuration.
 
 On macOS, install the Xcode Command Line Tools if needed, and wait for installation to finish:
 
@@ -18,7 +18,7 @@ On Debian / Ubuntu, use an account with `sudo` access:
 
 ```sh
 sudo apt-get update
-sudo apt-get install --yes ca-certificates curl git zsh
+sudo apt-get install --yes ca-certificates curl git openssh-client zsh
 ```
 
 ### Setup
@@ -38,7 +38,7 @@ chezmoi --source "$PWD" diff
 chezmoi --source "$PWD" apply
 ```
 
-Applying prepares Homebrew, installs the packages declared in `Brewfile`, and installs Oh My Zsh before writing the managed `.zprofile` and `.zshrc`. Homebrew and Oh My Zsh use their official installers; installation failures stop the apply. On Debian / Ubuntu, the script also installs [Homebrew's build prerequisites](https://docs.brew.sh/Homebrew-on-Linux).
+Applying prepares Homebrew, installs the packages declared in `Brewfile`, installs Oh My Zsh, and initializes local SSH keys before writing managed configuration. Homebrew and Oh My Zsh use their official installers; installation or SSH initialization failures stop the apply. On Debian / Ubuntu, the script also installs [Homebrew's build prerequisites](https://docs.brew.sh/Homebrew-on-Linux).
 
 Start a login Zsh to load the environment and interactive configuration:
 
@@ -137,7 +137,7 @@ Commit `.gitattributes` with the matching files. `--local` keeps project setup f
 │   └── dot_zshrc          # Interactive shell
 ├── scripts/               # Installation scripts
 │   ├── install.sh         # Entry point
-│   └── lib/               # Homebrew and Oh My Zsh functions
+│   └── lib/               # Installation and initialization functions
 ├── tests/                 # Behavior tests and helpers
 └── .github/workflows/     # CI checks
 ```
