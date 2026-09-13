@@ -25,7 +25,7 @@ sudo apt-get install --yes ca-certificates curl git openssh-client zsh
 
 Before the first apply, review the [Git migration steps](#git) if you already have Git configuration.
 
-Install chezmoi using its [official installer](https://www.chezmoi.io/install/#one-line-binary-install), then clone the repository and preview the configuration before applying it:
+Install chezmoi using its [official installer](https://www.chezmoi.io/install/#one-line-binary-install), clone the repository, and initialize your identity before previewing and applying configuration:
 
 ```sh
 sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin"
@@ -34,11 +34,23 @@ export PATH="$HOME/.local/bin:$PATH"
 git clone https://github.com/jinke5245/dotfiles.git "$HOME/dotfiles"
 cd "$HOME/dotfiles"
 
+chezmoi --source "$PWD" init
 chezmoi --source "$PWD" diff
 chezmoi --source "$PWD" apply
 ```
 
-Applying prepares Homebrew, installs the packages declared in `Brewfile`, installs Oh My Zsh, and initializes local SSH keys before writing managed configuration. Homebrew and Oh My Zsh use their official installers; installation or SSH initialization failures stop the apply. On Debian / Ubuntu, the script also installs [Homebrew's build prerequisites](https://docs.brew.sh/Homebrew-on-Linux).
+For each identity field, `init` first reads global Git configuration (including includes, outside any repository), then reuses saved values, and prompts only if still missing. It saves the name and email under `[data.user]` in `~/.config/chezmoi/chezmoi.toml`, outside the repository. `diff` and `apply` do not prompt for identity.
+
+For unattended setup, replace the `init` command with supplied answers; existing global or saved values still take precedence:
+
+```sh
+chezmoi --source "$PWD" init \
+  --promptString 'User name=Your Name,User email=you@example.com' < /dev/null
+```
+
+Both fields are required during initialization; missing input stops unattended setup. Initialization does not install software, change Git configuration, or generate SSH keys.
+
+Applying prepares Homebrew, installs the packages declared in `Brewfile`, installs Oh My Zsh, and initializes local Git identity and SSH keys before writing managed configuration. Homebrew and Oh My Zsh use their official installers; installation or initialization failures stop the apply. On Debian / Ubuntu, the script also installs [Homebrew's build prerequisites](https://docs.brew.sh/Homebrew-on-Linux).
 
 Start a login Zsh to load the environment and interactive configuration:
 
@@ -86,11 +98,13 @@ Shared defaults live in `~/.config/git/config`: new repositories use `main`, fet
 
 These paths use Git's default XDG location: `XDG_CONFIG_HOME` must be unset or point to `~/.config`.
 
-1. Review and back up existing `~/.gitconfig` and `~/.config/git/config`. Use `git config --global --list --show-origin` to locate current settings.
+1. Review and back up existing `~/.gitconfig` and `~/.config/git/config`. Use `git -C / config --list --show-origin` to locate settings outside any repository.
 2. Move device-specific settings into `~/.config/git/config.local`, preserving any settings already there.
 3. Preview `chezmoi diff` before applying. Resolve conflicting entries in `~/.gitconfig` manually; dotfiles do not move or delete that file.
 
-No default identity is provided. `user.useConfigOnly = true` requires an explicitly configured name and email for commits. Set or update them in the local file:
+No shared identity is provided. On apply, saved inputs initialize missing `user.name` and `user.email` entries in `config.local`, creating the file if needed. Existing entries (including empty values), unrelated settings, and comments are preserved. `user.useConfigOnly = true` requires an explicitly configured identity for commits.
+
+To change this device's Git identity afterward:
 
 ```sh
 mkdir -p ~/.config/git
@@ -98,7 +112,7 @@ git config --file ~/.config/git/config.local user.name "Your Name"
 git config --file ~/.config/git/config.local user.email "you@example.com"
 ```
 
-`config.local` loads after shared defaults and can override them. Git and chezmoi ignore it; apply neither creates nor overwrites it. An existing `~/.gitconfig` is read afterward, and repository settings take precedence over these global files.
+`config.local` loads after shared defaults and can override them. Git and chezmoi exclude it from source management; later applies preserve manual changes. An existing `~/.gitconfig` is read afterward, and repository settings take precedence over these global files.
 
 **Authentication**
 
@@ -134,7 +148,9 @@ Each apply checks `~/.ssh/id_ed25519` and `~/.ssh/id_ed25519.pub`:
 | Private key only | Recover the public key without changing the private key.  |
 | Public key only  | Stop with an error; resolve the incomplete pair manually. |
 
-New keys have no passphrase and use the default `user@hostname` comment. Newly created permissions are `700` for `.ssh`, `600` for the private key, and `644` for the public key. Existing directories, keys at other paths, and their permissions remain unchanged.
+New keys have no passphrase. Their comment uses the email saved under `[data.user]`; if absent or empty, generation omits `-C` and keeps the default `user@hostname` comment. SSH initialization does not query Git, and existing or recovered keys keep their original comments.
+
+Newly created permissions are `700` for `.ssh`, `600` for the private key, and `644` for the public key. Existing directories, keys at other paths, and their permissions remain unchanged.
 
 Key paths must be regular files or symlinks to regular files. Conflicting directories and dangling symlinks stop apply without being replaced.
 
@@ -155,6 +171,7 @@ Register the public key with your Git host or servers separately.
 ├── .chezmoiroot           # Selects home/ as the source root
 ├── Brewfile               # Shared Homebrew packages
 ├── home/                  # Chezmoi source state
+│   ├── .chezmoi.toml.tmpl  # Local identity initialization
 │   ├── .chezmoiignore     # Deployment exclusions
 │   ├── .chezmoiscripts/   # Chezmoi lifecycle adapters
 │   ├── dot_config/git/    # Shared Git configuration
