@@ -44,12 +44,12 @@ Group integration suites by responsibility: `chezmoi`, `install`, `git`, `ssh`, 
 
 Run commands from the repository root:
 
-| Command                                     | Scope and requirements                                                                                                      |
-| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm test`                                 | Default unit and integration suites; runs offline.                                                                          |
-| `pnpm ci:test`                              | Local Linux CI jobs via act; requires a running Docker-compatible engine and network access. Skips when act is unavailable. |
-| `OMZ_SOURCE=/path/to/ohmyzsh pnpm test:e2e` | End-to-end suite; requires Homebrew on PATH, installed Brewfile packages, Git, and a local Oh My Zsh checkout.              |
-| `pnpm test:setup`                           | First-time setup suite; requires Docker and network access. Creates and removes a fresh `ubuntu:24.04` container.           |
+| Command           | Scope and requirements                                                                                                                           |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm test`       | Default unit and integration suites; runs offline.                                                                                               |
+| `pnpm ci:test`    | Local Linux CI jobs via act; requires a running Docker-compatible engine and network access. Skips when act is unavailable.                      |
+| `pnpm test:e2e`   | End-to-end suite; requires Homebrew on PATH, installed Brewfile packages, Git, and the prepared runtimes and Oh My Zsh checkout described below. |
+| `pnpm test:setup` | First-time setup suite; requires Docker and network access. Creates and removes a fresh `ubuntu:24.04` container.                                |
 
 `ci:test` runs these subcommands sequentially, stopping on failure. Each uses `ci:run` and the existing optional-command wrapper; missing act is skipped. `.actrc` selects the CI workflow and Ubuntu image, and removes failed act containers. Architecture follows the local Docker engine.
 
