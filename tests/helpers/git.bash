@@ -13,7 +13,7 @@ git_sandbox_create() {
   sandbox_git init --quiet "$SANDBOX_GIT_WORKTREE"
 }
 
-sandbox_git() (
+git_sandbox_run() (
   cd "$SANDBOX_ROOT" || return
 
   # Let Git discover the deployed XDG file itself. Do not inherit host identity,
@@ -31,8 +31,30 @@ sandbox_git() (
     GIT_TERMINAL_PROMPT=0 \
     GIT_ASKPASS=/usr/bin/false \
     GIT_ALLOW_PROTOCOL=file \
-    "$SANDBOX_GIT" "$@"
+    "$@"
 )
+
+sandbox_git() {
+  git_sandbox_run "$SANDBOX_GIT" "$@"
+}
+
+git_identity_initialize() {
+  # Shell snippets expand only in the isolated child process.
+  # shellcheck disable=SC2016
+  git_sandbox_run bash -euo pipefail -c '
+    source "$1/scripts/lib/git.sh"
+    shift
+    initialize_git_identity "$@"
+  ' _ "$SANDBOX_REPOSITORY" "$@"
+}
+
+git_assert_local_identity() {
+  run -0 sandbox_git config --file "$SANDBOX_GIT_LOCAL" --get user.name
+  [ "$output" = "$1" ] || return
+
+  run -0 sandbox_git config --file "$SANDBOX_GIT_LOCAL" --get user.email
+  [ "$output" = "$2" ]
+}
 
 git_fixture_identity() {
   sandbox_git config --file "$SANDBOX_GIT_LOCAL" user.name 'Dotfiles test'

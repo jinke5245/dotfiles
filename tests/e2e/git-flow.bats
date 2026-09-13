@@ -16,16 +16,19 @@ setup() {
   flow_sandbox_create
 }
 
-@test "login shells discover shared Git configuration without a local identity" {
+@test "login shells discover shared defaults and the initialized local Git identity" {
   sandbox_chezmoi apply
 
   run -0 sandbox_zsh -lc 'git config --show-origin --get user.useConfigOnly'
 
   [ "$output" = "$(printf 'file:%s\ttrue' "$SANDBOX_HOME/.config/git/config")" ]
-  [ ! -e "$SANDBOX_HOME/.config/git/config.local" ]
+  [ -f "$SANDBOX_HOME/.config/git/config.local" ]
 
-  run -1 sandbox_zsh -lc 'git config --get-regexp "^user\.(name|email)$"'
-  [ -z "$output" ]
+  run -0 sandbox_zsh -lc 'git config --show-origin --get user.name'
+  [ "$output" = "$(printf 'file:%s\tDotfiles test' "$SANDBOX_HOME/.config/git/config.local")" ]
+
+  run -0 sandbox_zsh -lc 'git config --get user.email'
+  [ "$output" = test@example.invalid ]
 }
 
 @test "first and repeated apply preserve local Git identity and overrides" {

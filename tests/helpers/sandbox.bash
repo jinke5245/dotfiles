@@ -53,6 +53,9 @@ sandbox_chezmoi() (
     TMPDIR="$SANDBOX_ROOT/tmp" \
     LC_ALL=C \
     GIT_CONFIG_NOSYSTEM=1 \
+    GIT_ALLOW_PROTOCOL=file \
+    GIT_TERMINAL_PROMPT=0 \
+    GIT_ASKPASS=/usr/bin/false \
     "$SANDBOX_CHEZMOI" \
     --source "$SANDBOX_REPOSITORY" \
     --destination "$SANDBOX_HOME" \

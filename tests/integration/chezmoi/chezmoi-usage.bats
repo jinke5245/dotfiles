@@ -10,6 +10,8 @@ setup_file() {
 setup() {
   USAGE_GIT="$(command -v git)"
   install_sandbox_create
+  # Apply now initializes Git identity; keep Git real and installers offline.
+  ln -sf "$USAGE_GIT" "$SANDBOX_ROOT/bin/git"
 }
 
 usage_git() {
