@@ -21,7 +21,7 @@ main() {
   install_homebrew_packages "$repository_root/Brewfile"
   install_oh_my_zsh
   initialize_git_identity "$user_name" "$user_email"
-  initialize_ssh_keys
+  initialize_ssh_keys "$user_email"
 }
 
 main "$@"

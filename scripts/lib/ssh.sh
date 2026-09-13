@@ -45,7 +45,9 @@ initialize_ssh_keys() {
 
   # Set permissions only on files and directories created by this operation.
   [[ -d "$ssh_dir" ]] || mkdir -m 700 "$ssh_dir" || return
-  ssh-keygen -q -t ed25519 -N '' -f "$private_key" || return
+  local keygen_args=(-q -t ed25519 -N '' -f "$private_key")
+  [[ -z "${1:-}" ]] || keygen_args+=(-C "$1")
+  ssh-keygen "${keygen_args[@]}" || return
   chmod 600 "$private_key" || return
   chmod 644 "$public_key"
 }

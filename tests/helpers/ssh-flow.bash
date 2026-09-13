@@ -4,6 +4,7 @@
 ssh_flow_check() (
   set -eu
 
+  local expected_comment="${1:-$(id -un)@$(hostname)}"
   local private_key public_key derived permissions
   private_key="$HOME/.ssh/id_ed25519"
   public_key="$private_key.pub"
@@ -16,7 +17,7 @@ ssh_flow_check() (
   test "$(cut -d ' ' -f 1 "$public_key")" = ssh-ed25519
   test "$(printf '%s\n' "$derived" | cut -d ' ' -f 1,2)" = \
     "$(cut -d ' ' -f 1,2 "$public_key")"
-  test "$(cut -d ' ' -f 3- "$public_key")" = "$(id -un)@$(hostname)"
+  test "$(cut -d ' ' -f 3- "$public_key")" = "$expected_comment"
 
   case "$(uname -s)" in
     Darwin) permissions="$(stat -f '%Lp' "$HOME/.ssh" "$private_key" "$public_key")" ;;

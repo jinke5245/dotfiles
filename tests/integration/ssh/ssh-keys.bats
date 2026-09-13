@@ -31,6 +31,51 @@ setup() {
   [ "$(cut -d ' ' -f 3- "$SANDBOX_SSH_KEY.pub")" = "$(id -un)@$(hostname)" ]
 }
 
+@test "a supplied email becomes the comment in both new keys" {
+  run -0 ssh_sandbox_initialize saved@example.invalid
+
+  ssh_assert_key_pair
+  [ "$(cut -d ' ' -f 3- "$SANDBOX_SSH_KEY.pub")" = saved@example.invalid ]
+  [ "$(cut -d ' ' -f 3- "$SANDBOX_ROOT/derived.pub")" = saved@example.invalid ]
+}
+
+@test "an explicitly empty email keeps the default key comment" {
+  run -0 ssh_sandbox_initialize ''
+
+  ssh_assert_key_pair
+  [ "$(cut -d ' ' -f 3- "$SANDBOX_SSH_KEY.pub")" = "$(id -un)@$(hostname)" ]
+}
+
+@test "a supplied comment preserves quotes, spaces, and shell syntax literally" {
+  local comment="O'Brien"
+  comment+=' 李 "Test" \ $(touch "$HOME/injected")'
+
+  run -0 ssh_sandbox_initialize "$comment"
+
+  ssh_assert_key_pair
+  [ "$(cut -d ' ' -f 3- "$SANDBOX_SSH_KEY.pub")" = "$comment" ]
+  [ "$(cut -d ' ' -f 3- "$SANDBOX_ROOT/derived.pub")" = "$comment" ]
+  [ ! -e "$SANDBOX_HOME/injected" ]
+}
+
+@test "SSH initialization never queries Git for an email" {
+  local email
+  for email in saved@example.invalid ''; do
+    run -0 ssh_sandbox_run /bin/bash -c '
+      git() {
+        touch "$HOME/git-queried"
+        printf "git@example.invalid\n"
+      }
+      source "$1"
+      initialize_ssh_keys "$2"
+    ' _ "$SANDBOX_REPOSITORY/scripts/lib/ssh.sh" "$email"
+
+    [ ! -e "$SANDBOX_HOME/git-queried" ]
+    ssh_assert_key_pair
+    rm "$SANDBOX_SSH_KEY" "$SANDBOX_SSH_KEY.pub"
+  done
+}
+
 @test "sets new directory and key permissions despite the caller's umask" {
   local mask
   for mask in 000 077; do
@@ -60,8 +105,8 @@ setup() {
   cp -p "$SANDBOX_SSH_KEY.pub" "$SANDBOX_ROOT/public.before"
 
   # No passphrase is available here: a complete pair must be left alone.
-  run -0 ssh_sandbox_initialize
-  run -0 ssh_sandbox_initialize
+  run -0 ssh_sandbox_initialize changed@example.invalid
+  run -0 ssh_sandbox_initialize another@example.invalid
 
   ssh_assert_preserved "$SANDBOX_SSH_KEY" "$SANDBOX_ROOT/private.before"
   ssh_assert_preserved "$SANDBOX_SSH_KEY.pub" "$SANDBOX_ROOT/public.before"

@@ -35,8 +35,8 @@ ssh_sandbox_run() (
 )
 
 ssh_sandbox_initialize() {
-  ssh_sandbox_run /bin/bash -c 'source "$1" && initialize_ssh_keys' _ \
-    "$SANDBOX_REPOSITORY/scripts/lib/ssh.sh"
+  ssh_sandbox_run /bin/bash -c 'source "$1" && shift && initialize_ssh_keys "$@"' _ \
+    "$SANDBOX_REPOSITORY/scripts/lib/ssh.sh" "$@"
 }
 
 ssh_fixture_key() {
