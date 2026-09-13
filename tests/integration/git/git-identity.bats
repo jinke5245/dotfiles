@@ -55,6 +55,58 @@ CONFIG
   [ "$output" = 'editor --wait' ]
 }
 
+@test "initialization preserves identity supplied by an included local file" {
+  git_fixture_included_identity
+  local included="$SANDBOX_HOME/.config/git/identity.config"
+  touch -t 200001010000 "$SANDBOX_GIT_LOCAL" "$included"
+  cp -p "$SANDBOX_GIT_LOCAL" "$SANDBOX_ROOT/local.before"
+  cp -p "$included" "$SANDBOX_ROOT/included.before"
+
+  run -0 git_identity_initialize 'Saved Name' saved@example.invalid
+
+  git_assert_local_identity 'Included Name' included@example.invalid
+  cmp "$SANDBOX_GIT_LOCAL" "$SANDBOX_ROOT/local.before"
+  cmp "$included" "$SANDBOX_ROOT/included.before"
+  [ ! "$SANDBOX_GIT_LOCAL" -nt "$SANDBOX_ROOT/local.before" ]
+  [ ! "$included" -nt "$SANDBOX_ROOT/included.before" ]
+}
+
+@test "initialization fills only the field absent from included local identity" {
+  git_fixture_included_identity
+  local included="$SANDBOX_HOME/.config/git/identity.config"
+  sandbox_git config --file "$included" --unset user.email
+  cp -p "$included" "$SANDBOX_ROOT/included.before"
+
+  run -0 git_identity_initialize 'Saved Name' saved@example.invalid
+
+  git_assert_local_identity 'Included Name' saved@example.invalid
+  run -1 sandbox_git config --file "$SANDBOX_GIT_LOCAL" --get user.name
+  run -0 sandbox_git config --file "$SANDBOX_GIT_LOCAL" --get user.email
+  [ "$output" = saved@example.invalid ]
+  cmp "$included" "$SANDBOX_ROOT/included.before"
+}
+
+@test "included empty and valueless identity keys remain unchanged" {
+  git_fixture_included_identity
+  printf '[user]\n name = ""\n email\n' > "$SANDBOX_HOME/.config/git/identity.config"
+  cp -p "$SANDBOX_GIT_LOCAL" "$SANDBOX_ROOT/local.before"
+
+  run -0 git_identity_initialize 'Saved Name' saved@example.invalid
+
+  cmp "$SANDBOX_GIT_LOCAL" "$SANDBOX_ROOT/local.before"
+}
+
+@test "a malformed included file stops initialization without writing local identity" {
+  git_fixture_included_identity
+  printf '[broken\n' > "$SANDBOX_HOME/.config/git/identity.config"
+  cp -p "$SANDBOX_GIT_LOCAL" "$SANDBOX_ROOT/local.before"
+
+  run ! git_identity_initialize 'Saved Name' saved@example.invalid
+
+  [[ "$output" == *'identity.config'* ]]
+  cmp "$SANDBOX_GIT_LOCAL" "$SANDBOX_ROOT/local.before"
+}
+
 @test "defined empty and valueless identity keys remain unchanged" {
   printf '[user]\n    name = ""\n    email\n' > "$SANDBOX_GIT_LOCAL"
   touch -t 200001010000 "$SANDBOX_GIT_LOCAL"

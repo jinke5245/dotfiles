@@ -11,6 +11,14 @@ identity_init() {
   sandbox_chezmoi init --config-path "$SANDBOX_CONFIG" "$@"
 }
 
+identity_init_with_env() {
+  # Exercise inherited Git settings without exposing the host environment.
+  git_sandbox_run env "$@" "$SANDBOX_CHEZMOI" \
+    --source "$SANDBOX_REPOSITORY" --destination "$SANDBOX_HOME" \
+    --config "$SANDBOX_CONFIG" --no-pager --no-tty \
+    init --config-path "$SANDBOX_CONFIG"
+}
+
 identity_assert_data() {
   run -0 sandbox_chezmoi execute-template '{{ .user.name }}'
   [ "$output" = "$1" ] || return

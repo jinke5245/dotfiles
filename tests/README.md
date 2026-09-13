@@ -18,7 +18,7 @@ Group integration suites by responsibility: `chezmoi`, `install`, `git`, `ssh`, 
 | [integration/install/install-oh-my-zsh.bats](integration/install/install-oh-my-zsh.bats)           | Official installer invocation, existing installations, configuration preservation, managed paths, and failures.                 |
 | [integration/git/git-defaults.bats](integration/git/git-defaults.bats)                             | Configuration discovery, main branch, Chinese filenames, fast-forward-only pulls, pruning, and LFS filter settings.             |
 | [integration/git/git-local.bats](integration/git/git-local.bats)                                   | Required identity, local and repository overrides, legacy configuration precedence, preservation, and Git / chezmoi exclusions. |
-| [integration/git/git-identity.bats](integration/git/git-identity.bats)                             | Missing identity fields, existing values and comments, absent inputs, symlinks, and read, parse, or lock failures.              |
+| [integration/git/git-identity.bats](integration/git/git-identity.bats)                             | Missing fields, direct / included identity, comments, absent inputs, symlinks, and read, parse, or lock failures.               |
 | [integration/git/git-install.bats](integration/git/git-install.bats)                               | Saved identity on apply, read-only preview, manual changes, argument quoting, and failure before SSH or managed files.          |
 | [integration/git/git-credentials.bats](integration/git/git-credentials.bats)                       | GitHub / Gist helper routing, inherited-helper resets, unrelated URLs, local overrides, and unavailable credentials.            |
 | [integration/ssh/ssh-keys.bats](integration/ssh/ssh-keys.bats)                                     | Ed25519 keys, supplied/default comments, Git independence, permissions, preservation, and path conflicts.                       |
@@ -70,7 +70,7 @@ Bats tags keep the suites separate: `test:e2e` excludes `network`, `test:setup` 
 
 Identity initialization tests run real chezmoi and Git with temporary homes, configuration, and source copies. Synthetic values exercise native prompts and unattended inputs; initialization must leave Git files unchanged and never run installers or generate SSH keys.
 
-Global identity lookup covers legacy and XDG files together, includes, per-field precedence, and empty-value fallback. A test-owned system configuration verifies that system identity is excluded; repository settings and repository-dependent includes must also be excluded.
+Global identity lookup covers legacy and XDG files together, includes, per-field precedence, and empty-value fallback. A test-owned system configuration verifies that system identity is excluded. Explicit Git environment overrides exercise repository selection, conditional includes, command-scope values, and config-file selection; none may replace global identity.
 
 Installation tests serve local installer fixtures instead of downloading scripts. System prefixes are relocated only in disposable repository copies; tests never install into real system directories.
 

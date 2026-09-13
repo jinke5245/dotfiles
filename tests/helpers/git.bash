@@ -49,16 +49,22 @@ git_identity_initialize() {
 }
 
 git_assert_local_identity() {
-  run -0 sandbox_git config --file "$SANDBOX_GIT_LOCAL" --get user.name
+  run -0 sandbox_git config --file "$SANDBOX_GIT_LOCAL" --includes --get user.name
   [ "$output" = "$1" ] || return
 
-  run -0 sandbox_git config --file "$SANDBOX_GIT_LOCAL" --get user.email
+  run -0 sandbox_git config --file "$SANDBOX_GIT_LOCAL" --includes --get user.email
   [ "$output" = "$2" ]
 }
 
 git_fixture_identity() {
   sandbox_git config --file "$SANDBOX_GIT_LOCAL" user.name 'Dotfiles test'
   sandbox_git config --file "$SANDBOX_GIT_LOCAL" user.email test@example.invalid
+}
+
+git_fixture_included_identity() {
+  sandbox_git config --file "$SANDBOX_GIT_LOCAL" include.path identity.config
+  sandbox_git config --file "$SANDBOX_HOME/.config/git/identity.config" user.name 'Included Name'
+  sandbox_git config --file "$SANDBOX_HOME/.config/git/identity.config" user.email included@example.invalid
 }
 
 git_fixture_remote() {

@@ -239,6 +239,46 @@ ANSWERS
   run -1 grep -R -F 'private-test@example.invalid' "$SANDBOX_REPOSITORY/home"
 }
 
+@test "init ignores an environment-selected repository and its conditional includes" {
+  identity_saved_data
+  sandbox_git config --global user.name 'Global Name'
+  sandbox_git config --global user.email global@example.invalid
+  sandbox_git init --quiet "$SANDBOX_ROOT/project"
+  sandbox_git -C "$SANDBOX_ROOT/project" config user.email repository@example.invalid
+  sandbox_git config --file "$SANDBOX_ROOT/project.config" user.name 'Conditional Name'
+  sandbox_git config --global 'includeIf.gitdir:**.path' "$SANDBOX_ROOT/project.config"
+
+  run -0 identity_init_with_env \
+    GIT_DIR="$SANDBOX_ROOT/project/.git" \
+    GIT_COMMON_DIR="$SANDBOX_ROOT/project/.git" \
+    GIT_WORK_TREE="$SANDBOX_ROOT/project" < /dev/null
+
+  identity_assert_data 'Global Name' global@example.invalid
+}
+
+@test "init ignores command-scope Git environment overrides" {
+  sandbox_git config --global user.name 'Global Name'
+  sandbox_git config --global user.email global@example.invalid
+
+  run -0 identity_init_with_env \
+    GIT_CONFIG_PARAMETERS="'user.name=Command Name'" \
+    GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=user.email \
+    GIT_CONFIG_VALUE_0=command@example.invalid < /dev/null
+
+  identity_assert_data 'Global Name' global@example.invalid
+}
+
+@test "init ignores an environment-selected Git config file" {
+  sandbox_git config --global user.name 'Global Name'
+  sandbox_git config --global user.email global@example.invalid
+  sandbox_git config --file "$SANDBOX_ROOT/override.config" user.name 'Override Name'
+  sandbox_git config --file "$SANDBOX_ROOT/override.config" user.email override@example.invalid
+
+  run -0 identity_init_with_env GIT_CONFIG="$SANDBOX_ROOT/override.config" < /dev/null
+
+  identity_assert_data 'Global Name' global@example.invalid
+}
+
 @test "preview and configuration-only apply do not repeat identity prompts" {
   identity_saved_data
   identity_init < /dev/null

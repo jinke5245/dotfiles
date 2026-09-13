@@ -98,11 +98,18 @@ Shared defaults live in `~/.config/git/config`: new repositories use `main`, fet
 
 These paths use Git's default XDG location: `XDG_CONFIG_HOME` must be unset or point to `~/.config`.
 
-1. Review and back up existing `~/.gitconfig` and `~/.config/git/config`. Use `git -C / config --list --show-origin` to locate settings outside any repository.
+1. Review and back up existing `~/.gitconfig` and `~/.config/git/config`. Inspect global settings and their sources:
+
+   ```sh
+   env -u GIT_CONFIG -u GIT_CONFIG_PARAMETERS \
+     GIT_CONFIG_COUNT=0 GIT_CONFIG_NOSYSTEM=1 \
+     git --git-dir=/dev/null config --includes --list --show-origin
+   ```
+
 2. Move device-specific settings into `~/.config/git/config.local`, preserving any settings already there.
 3. Preview `chezmoi diff` before applying. Resolve conflicting entries in `~/.gitconfig` manually; dotfiles do not move or delete that file.
 
-No shared identity is provided. On apply, saved inputs initialize missing `user.name` and `user.email` entries in `config.local`, creating the file if needed. Existing entries (including empty values), unrelated settings, and comments are preserved. `user.useConfigOnly = true` requires an explicitly configured identity for commits.
+No shared identity is provided. On apply, saved inputs initialize missing `user.name` and `user.email` entries in `config.local`, creating the file if needed. Existing entries (including empty values and entries from included files), unrelated settings, and comments are preserved. `user.useConfigOnly = true` requires an explicitly configured identity for commits.
 
 To change this device's Git identity afterward:
 

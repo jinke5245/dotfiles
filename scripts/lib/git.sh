@@ -18,8 +18,8 @@ initialize_git_identity() {
     esac
     [[ -n "$value" ]] || continue
 
-    # A defined key, even with an empty value, belongs to this machine.
-    if git config --file "$config" --get "user.$field" > /dev/null; then
+    # A defined key, even empty or supplied by an include, belongs to this machine.
+    if git config --file "$config" --includes --get "user.$field" > /dev/null; then
       continue
     else
       status=$?
