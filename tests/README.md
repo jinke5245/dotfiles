@@ -4,32 +4,35 @@ See the root README for [development requirements](../README.md#requirements) an
 
 ## Suites
 
-Group integration suites by responsibility: `chezmoi`, `install`, `git`, `zsh`, and `harness` (test isolation and safety). Keep descriptive filenames, and organize scenarios within each file. Tests run independently of directory order.
+Group integration suites by responsibility: `chezmoi`, `install`, `git`, `ssh`, `zsh`, and `harness` (test isolation and safety). Keep descriptive filenames, and organize scenarios within each file. Tests run independently of directory order.
 
-| File                                                                                               | Coverage                                                                                                                            |
-| -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| [integration/chezmoi/chezmoi-layout.bats](integration/chezmoi/chezmoi-layout.bats)                 | Source discovery, target paths, deployment exclusions, repeatable application, and unrelated files.                                 |
-| [integration/chezmoi/chezmoi-install.bats](integration/chezmoi/chezmoi-install.bats)               | Installation before configuration, failure propagation, repeatable application, and changes to external scripts.                    |
-| [integration/chezmoi/chezmoi-usage.bats](integration/chezmoi/chezmoi-usage.bats)                   | Configuration application from a clone, previewing changes, and applying pulled updates using a local Git remote.                   |
-| [integration/install/install-homebrew.bats](integration/install/install-homebrew.bats)             | macOS and Debian / Ubuntu installation, existing executables, and prerequisite, download, or installer failures.                    |
-| [integration/install/setup-homebrew-action.bats](integration/install/setup-homebrew-action.bats)   | Linux prerequisites, installation, existing executables, repeated setup, GitHub PATH updates, and failure propagation.              |
-| [integration/install/install-brewfile.bats](integration/install/install-brewfile.bats)             | Brewfile installation, executable selection after setup, explicit repository paths, repeated apply, and failures.                   |
-| [integration/install/install-oh-my-zsh.bats](integration/install/install-oh-my-zsh.bats)           | Official installer invocation, existing installations, configuration preservation, managed paths, and failures.                     |
-| [integration/git/git-defaults.bats](integration/git/git-defaults.bats)                             | Configuration discovery, main branch, Chinese filenames, fast-forward-only pulls, pruning, and LFS filter settings.                 |
-| [integration/git/git-local.bats](integration/git/git-local.bats)                                   | Required identity, local and repository overrides, legacy configuration precedence, preservation, and Git / chezmoi exclusions.     |
-| [integration/git/git-credentials.bats](integration/git/git-credentials.bats)                       | GitHub / Gist helper routing, inherited-helper resets, unrelated URLs, local overrides, and unavailable credentials.                |
-| [integration/zsh/zsh-startup.bats](integration/zsh/zsh-startup.bats)                               | Zsh syntax, startup modes, Homebrew selection, PATH handling, and missing Oh My Zsh.                                                |
-| [integration/zsh/zsh-plugins.bats](integration/zsh/zsh-plugins.bats)                               | Completion auditing, plugin loading order, prefix discovery and absence, missing dependencies, and arrow bindings.                  |
-| [integration/zsh/zsh-local.bats](integration/zsh/zsh-local.bats)                                   | Local overrides, missing and unreadable files, startup modes, repeat-apply preservation, and Git / chezmoi exclusions.              |
-| [integration/harness/sandbox-isolation.bats](integration/harness/sandbox-isolation.bats)           | Current edits and new files are copied; ignored private data, Git metadata, and deleted files are excluded.                         |
-| [integration/harness/flow-homebrew-safety.bats](integration/harness/flow-homebrew-safety.bats)     | Offline E2E substitutes read-only dependency checks and rejects other Homebrew operations.                                          |
-| [integration/harness/setup-container-safety.bats](integration/harness/setup-container-safety.bats) | Container setup reports missing Docker and stops before attempting installation.                                                    |
-| [integration/harness/setup-macos-safety.bats](integration/harness/setup-macos-safety.bats)         | macOS setup refuses local, act, and self-hosted execution before installation or removal.                                           |
-| [e2e/chezmoi-flow.bats](e2e/chezmoi-flow.bats)                                                     | Real Oh My Zsh installation, native rendering, shell startup, local file preservation, repeat applies, and external script changes. |
-| [e2e/git-flow.bats](e2e/git-flow.bats)                                                             | Login-shell Git discovery, local identity preservation, real LFS filtering, and project setup without changing global files.        |
-| [e2e/zsh-plugins.bats](e2e/zsh-plugins.bats)                                                       | Completion initialization, real interactive plugin behavior, and local key-binding overrides.                                       |
-| [e2e/setup.bats](e2e/setup.bats)                                                                   | Documented Ubuntu setup with real downloads, Git tooling paths and versions, login startup, and repeat application.                 |
-| [e2e/setup-macos.bats](e2e/setup-macos.bats)                                                       | The same setup and Git tooling checks on a guarded GitHub-hosted macOS runner, including missing Homebrew.                          |
+| File                                                                                               | Coverage                                                                                                                        |
+| -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| [integration/chezmoi/chezmoi-layout.bats](integration/chezmoi/chezmoi-layout.bats)                 | Source discovery, target paths, deployment exclusions, repeatable application, and unrelated files.                             |
+| [integration/chezmoi/chezmoi-install.bats](integration/chezmoi/chezmoi-install.bats)               | Installation before configuration, failure propagation, repeatable application, and changes to external scripts.                |
+| [integration/chezmoi/chezmoi-usage.bats](integration/chezmoi/chezmoi-usage.bats)                   | Configuration application from a clone, previewing changes, and applying pulled updates using a local Git remote.               |
+| [integration/install/install-homebrew.bats](integration/install/install-homebrew.bats)             | macOS and Debian / Ubuntu installation, existing executables, and prerequisite, download, or installer failures.                |
+| [integration/install/setup-homebrew-action.bats](integration/install/setup-homebrew-action.bats)   | Linux prerequisites, installation, existing executables, repeated setup, GitHub PATH updates, and failure propagation.          |
+| [integration/install/install-brewfile.bats](integration/install/install-brewfile.bats)             | Brewfile installation, executable selection after setup, explicit repository paths, repeated apply, and failures.               |
+| [integration/install/install-oh-my-zsh.bats](integration/install/install-oh-my-zsh.bats)           | Official installer invocation, existing installations, configuration preservation, managed paths, and failures.                 |
+| [integration/git/git-defaults.bats](integration/git/git-defaults.bats)                             | Configuration discovery, main branch, Chinese filenames, fast-forward-only pulls, pruning, and LFS filter settings.             |
+| [integration/git/git-local.bats](integration/git/git-local.bats)                                   | Required identity, local and repository overrides, legacy configuration precedence, preservation, and Git / chezmoi exclusions. |
+| [integration/git/git-credentials.bats](integration/git/git-credentials.bats)                       | GitHub / Gist helper routing, inherited-helper resets, unrelated URLs, local overrides, and unavailable credentials.            |
+| [integration/ssh/ssh-keys.bats](integration/ssh/ssh-keys.bats)                                     | Ed25519 generation, default comments, permissions, existing keys and directories, repeat execution, and path conflicts.         |
+| [integration/ssh/ssh-key-recovery.bats](integration/ssh/ssh-key-recovery.bats)                     | Public-key recovery, encrypted private keys, Ed25519 validation, preservation, and failures without creating public-key files.  |
+| [integration/ssh/ssh-install.bats](integration/ssh/ssh-install.bats)                               | Preview without generation, unmanaged keys, initialization and recovery on apply, preservation, and failure propagation.        |
+| [integration/zsh/zsh-startup.bats](integration/zsh/zsh-startup.bats)                               | Zsh syntax, startup modes, Homebrew selection, PATH handling, and missing Oh My Zsh.                                            |
+| [integration/zsh/zsh-plugins.bats](integration/zsh/zsh-plugins.bats)                               | Completion auditing, plugin loading order, prefix discovery and absence, missing dependencies, and arrow bindings.              |
+| [integration/zsh/zsh-local.bats](integration/zsh/zsh-local.bats)                                   | Local overrides, missing and unreadable files, startup modes, repeat-apply preservation, and Git / chezmoi exclusions.          |
+| [integration/harness/sandbox-isolation.bats](integration/harness/sandbox-isolation.bats)           | Current edits and new files are copied; ignored private data, Git metadata, and deleted files are excluded.                     |
+| [integration/harness/flow-homebrew-safety.bats](integration/harness/flow-homebrew-safety.bats)     | Offline E2E substitutes read-only dependency checks and rejects other Homebrew operations.                                      |
+| [integration/harness/setup-container-safety.bats](integration/harness/setup-container-safety.bats) | Container setup reports missing Docker and stops before attempting installation.                                                |
+| [integration/harness/setup-macos-safety.bats](integration/harness/setup-macos-safety.bats)         | macOS setup refuses local, act, and self-hosted execution before installation or removal.                                       |
+| [e2e/chezmoi-flow.bats](e2e/chezmoi-flow.bats)                                                     | Real Oh My Zsh, native shell startup, SSH keys, local file preservation, repeat applies, and external script changes.           |
+| [e2e/git-flow.bats](e2e/git-flow.bats)                                                             | Login-shell Git discovery, local identity preservation, real LFS filtering, and project setup without changing global files.    |
+| [e2e/zsh-plugins.bats](e2e/zsh-plugins.bats)                                                       | Completion initialization, real interactive plugin behavior, and local key-binding overrides.                                   |
+| [e2e/setup.bats](e2e/setup.bats)                                                                   | Documented Ubuntu setup with real downloads, Git tooling, SSH keys, login startup, and repeat application.                      |
+| [e2e/setup-macos.bats](e2e/setup-macos.bats)                                                       | The same setup, Git, and SSH checks on a guarded GitHub-hosted macOS runner, including missing Homebrew.                        |
 
 ## Running
 
@@ -66,6 +69,8 @@ Installation tests serve local installer fixtures instead of downloading scripts
 
 Git integration tests use real Git with a temporary HOME, a test-owned system configuration, and an empty inherited environment. Git discovers the deployed `~/.config/git/config` through its normal XDG lookup. Repositories and remotes are local; network Git protocols and credential prompts are disabled. A substitute `gh` exercises the credential protocol with synthetic values. LFS filter execution with real dependencies belongs to E2E coverage.
 
+SSH integration tests require `ssh-keygen` and generate real keys only in temporary homes, with explicit key paths and an empty inherited environment. No SSH connections are made. Tests substitute only passphrase input through a test-owned askpass program; unavailable input fails immediately without opening a terminal prompt. Private-key contents are never printed or stored in fixtures.
+
 Zsh platform cases use chezmoi data overrides and temporary installation paths. These cases do not replace native tests on each OS.
 
 `chezmoi-flow.bats` runs the real Oh My Zsh installer and Git fetch against a local snapshot of the supplied checkout's committed files. It installs only inside a temporary home, disables update checks, and blocks remote Git protocols and unexpected installer downloads.
@@ -77,6 +82,8 @@ This flow suite requires existing Homebrew and installed Brewfile packages. A co
 `setup.bats` starts with no chezmoi, Homebrew, or Oh My Zsh in a fresh Ubuntu container. Root only provisions a test account with sudo access; that ordinary user follows the README prerequisites and installation steps. It checks that Brewfile dependencies are satisfied and installed package versions remain unchanged after a second apply. A pre-existing `.zshrc.local` must take effect and survive both applies unchanged. `NONINTERACTIVE=1` answers Homebrew's unattended-installation prompts.
 
 After both applies, shared assertions check that `git`, `git-lfs`, `gh`, `glab`, and `tig` resolve from the expected Homebrew prefix in a fresh login shell and report their versions. Pre-existing Git identity and overrides must load from `config.local`; shared, local, and legacy Git files must survive reapplication unchanged.
+
+Both setup platforms and the shell E2E flow use `helpers/ssh-flow.bash` to verify matching, unencrypted Ed25519 keys, the default comment, and directory / key permissions. Preview must not generate keys; repeated apply preserves their contents and modification times. Test keys and snapshots stay inside isolated homes or test directories.
 
 `git-flow.bats` uses the same isolated dependency adapter as the shell E2E suites. Both E2E and first-time setup source `helpers/git-flow.bash` inside a login shell to verify real LFS staging, pointer format, commit identity, and binary checkout. The round-trip uses shared filters before `git lfs install --local` verifies project setup and hook creation. All LFS objects stay in temporary repositories without remotes; no authentication is required.
 

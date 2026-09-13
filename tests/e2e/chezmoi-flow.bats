@@ -18,12 +18,19 @@ setup() {
 
 @test "a fresh apply installs real Oh My Zsh and starts the configured shells" {
   [ ! -e "$SANDBOX_HOME/.oh-my-zsh" ]
+  [ ! -e "$SANDBOX_HOME/.ssh" ]
 
   run -0 sandbox_chezmoi apply
 
   [ -f "$SANDBOX_HOME/.oh-my-zsh/oh-my-zsh.sh" ]
   [ ! -e "$SANDBOX_HOME/.zshrc.local" ]
   cmp "$SANDBOX_REPOSITORY/home/dot_zshrc" "$SANDBOX_HOME/.zshrc"
+
+  run -0 sandbox_zsh -lc '
+    source "$1/tests/helpers/ssh-flow.bash"
+    ssh_flow_check
+  ' _ "$SANDBOX_REPOSITORY"
+  [ -z "$output" ]
 
   local startup_file
   for startup_file in .zprofile .zshrc; do
@@ -57,7 +64,8 @@ setup() {
   cmp "$SANDBOX_REPOSITORY/tests/fixtures/zsh/local.zsh" "$SANDBOX_HOME/.zshrc.local"
 
   local file before
-  for file in .zprofile .zshrc .zshrc.local .oh-my-zsh/oh-my-zsh.sh; do
+  for file in .zprofile .zshrc .zshrc.local .oh-my-zsh/oh-my-zsh.sh \
+    .ssh/id_ed25519 .ssh/id_ed25519.pub; do
     cp -p "$SANDBOX_HOME/$file" "$SANDBOX_ROOT/$(basename "$file").before"
   done
   printf 'keep\n' > "$SANDBOX_HOME/.oh-my-zsh/custom/personal-note"
@@ -67,13 +75,20 @@ setup() {
 
   run -0 sandbox_chezmoi apply
 
-  for file in .zprofile .zshrc .zshrc.local .oh-my-zsh/oh-my-zsh.sh; do
+  for file in .zprofile .zshrc .zshrc.local .oh-my-zsh/oh-my-zsh.sh \
+    .ssh/id_ed25519 .ssh/id_ed25519.pub; do
     before="$SANDBOX_ROOT/$(basename "$file").before"
     cmp "$SANDBOX_HOME/$file" "$before"
     [ ! "$SANDBOX_HOME/$file" -nt "$before" ]
     [ ! "$SANDBOX_HOME/$file" -ot "$before" ]
   done
   [ "$(cat "$SANDBOX_HOME/.oh-my-zsh/custom/personal-note")" = keep ]
+
+  run -0 sandbox_zsh -lc '
+    source "$1/tests/helpers/ssh-flow.bash"
+    ssh_flow_check
+  ' _ "$SANDBOX_REPOSITORY"
+  [ -z "$output" ]
 
   run -0 sandbox_chezmoi diff --exclude scripts
   [ -z "$output" ]

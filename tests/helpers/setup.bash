@@ -82,6 +82,13 @@ setup_check_git_configuration() {
   ' "$SETUP_SOURCE"
 }
 
+setup_check_ssh_keys() {
+  run -0 setup_shell '
+    source "$1/tests/helpers/ssh-flow.bash"
+    ssh_flow_check
+  ' _ "$SETUP_SOURCE"
+}
+
 setup_check_flow() {
   # Follow the README sequence, including PATH before the first login shell.
   run -0 setup_shell '
@@ -95,6 +102,8 @@ setup_check_flow() {
     cd "$HOME/dotfiles"
     chezmoi --source "$PWD" diff
     test ! -e "$HOME/.oh-my-zsh"
+    test ! -e "$HOME/.ssh/id_ed25519"
+    test ! -e "$HOME/.ssh/id_ed25519.pub"
     chezmoi --source "$PWD" apply
     test -f "$HOME/.oh-my-zsh/oh-my-zsh.sh"
     cmp home/dot_zshrc "$HOME/.zshrc"
@@ -123,12 +132,14 @@ setup_check_flow() {
 
   setup_check_git_tools
   setup_check_git_configuration
+  setup_check_ssh_keys
 
   # Snapshot managed and local configuration plus the installed framework.
   setup_shell '
     mkdir "$HOME/.test-before"
     for file in .zprofile .zshrc .zshrc.local .oh-my-zsh/oh-my-zsh.sh \
-      .config/git/config .config/git/config.local .gitconfig; do
+      .config/git/config .config/git/config.local .gitconfig \
+      .ssh/id_ed25519 .ssh/id_ed25519.pub; do
       cp -p "$HOME/$file" "$HOME/.test-before/$(basename "$file")"
     done
     printf "keep\n" > "$HOME/.oh-my-zsh/custom/personal-note"
@@ -146,7 +157,8 @@ setup_check_flow() {
     cmp "$HOME/.test-package-versions" "$HOME/.test-package-versions-after"
 
     for file in .zprofile .zshrc .zshrc.local .oh-my-zsh/oh-my-zsh.sh \
-      .config/git/config .config/git/config.local .gitconfig; do
+      .config/git/config .config/git/config.local .gitconfig \
+      .ssh/id_ed25519 .ssh/id_ed25519.pub; do
       before="$HOME/.test-before/$(basename "$file")"
       cmp "$HOME/$file" "$before"
       test ! "$HOME/$file" -nt "$before"
@@ -157,4 +169,5 @@ setup_check_flow() {
 
   setup_check_git_tools
   setup_check_git_configuration
+  setup_check_ssh_keys
 }

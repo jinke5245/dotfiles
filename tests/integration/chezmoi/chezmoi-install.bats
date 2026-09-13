@@ -17,13 +17,15 @@ setup() {
 @test "sourcing installation libraries has no installation side effects" {
   run -0 install_sandbox_run bash -c '
     source "$1/lib/homebrew.sh" &&
-      source "$1/lib/oh-my-zsh.sh"
+      source "$1/lib/oh-my-zsh.sh" &&
+      source "$1/lib/ssh.sh"
   ' _ "$SANDBOX_REPOSITORY/scripts"
 
   [ -z "$output" ]
   [ ! -e "$SANDBOX_HOME/.install-test/download.log" ]
   [ ! -e "$SANDBOX_HOME/.install-test/oh-my-zsh.log" ]
   [ ! -e "$SANDBOX_HOME/.oh-my-zsh" ]
+  [ ! -e "$SANDBOX_HOME/.ssh" ]
 }
 
 @test "chezmoi installs dependencies before writing managed configuration" {

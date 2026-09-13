@@ -38,7 +38,7 @@ teardown() {
     test ! -e "$HOME/.oh-my-zsh"
     test ! -e "$HOME/.zshrc"
     sudo apt-get update
-    sudo apt-get install --yes ca-certificates curl git zsh
+    sudo apt-get install --yes ca-certificates curl git openssh-client zsh
   '
 
   setup_repository "$SETUP_SOURCE"

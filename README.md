@@ -6,7 +6,7 @@ Personal dotfiles for macOS and Linux, managed with [chezmoi](https://www.chezmo
 
 ### Prerequisites
 
-Use a regular user account on macOS or Debian / Ubuntu, with network access and administrator permissions for dependency installation. Bash, Git, curl, and Zsh must be available before applying configuration.
+Use a regular user account on macOS or Debian / Ubuntu, with network access and administrator permissions for dependency installation. Bash, Git, curl, Zsh, and `ssh-keygen` must be available before applying configuration.
 
 On macOS, install the Xcode Command Line Tools if needed, and wait for installation to finish:
 
@@ -18,7 +18,7 @@ On Debian / Ubuntu, use an account with `sudo` access:
 
 ```sh
 sudo apt-get update
-sudo apt-get install --yes ca-certificates curl git zsh
+sudo apt-get install --yes ca-certificates curl git openssh-client zsh
 ```
 
 ### Setup
@@ -38,7 +38,7 @@ chezmoi --source "$PWD" diff
 chezmoi --source "$PWD" apply
 ```
 
-Applying prepares Homebrew, installs the packages declared in `Brewfile`, and installs Oh My Zsh before writing the managed `.zprofile` and `.zshrc`. Homebrew and Oh My Zsh use their official installers; installation failures stop the apply. On Debian / Ubuntu, the script also installs [Homebrew's build prerequisites](https://docs.brew.sh/Homebrew-on-Linux).
+Applying prepares Homebrew, installs the packages declared in `Brewfile`, installs Oh My Zsh, and initializes local SSH keys before writing managed configuration. Homebrew and Oh My Zsh use their official installers; installation or SSH initialization failures stop the apply. On Debian / Ubuntu, the script also installs [Homebrew's build prerequisites](https://docs.brew.sh/Homebrew-on-Linux).
 
 Start a login Zsh to load the environment and interactive configuration:
 
@@ -123,6 +123,31 @@ git add .gitattributes
 
 Commit `.gitattributes` with the matching files. `--local` keeps project setup from writing global configuration; tracking does not convert existing history.
 
+### SSH keys
+
+Each apply checks `~/.ssh/id_ed25519` and `~/.ssh/id_ed25519.pub`:
+
+| Existing files   | Behavior                                                  |
+| ---------------- | --------------------------------------------------------- |
+| Neither          | Generate a new Ed25519 key pair.                          |
+| Both             | Preserve the files and their permissions.                 |
+| Private key only | Recover the public key without changing the private key.  |
+| Public key only  | Stop with an error; resolve the incomplete pair manually. |
+
+New keys have no passphrase and use the default `user@hostname` comment. Newly created permissions are `700` for `.ssh`, `600` for the private key, and `644` for the public key. Existing directories, keys at other paths, and their permissions remain unchanged.
+
+Key paths must be regular files or symlinks to regular files. Conflicting directories and dangling symlinks stop apply without being replaced.
+
+Public-key recovery requires an Ed25519 private key and may prompt for its existing passphrase. If recovery fails, apply stops without creating a public-key file.
+
+Keys stay on the device; keep them outside Git and the chezmoi source state. Inspect the public-key fingerprint with:
+
+```sh
+ssh-keygen -lf ~/.ssh/id_ed25519.pub
+```
+
+Register the public key with your Git host or servers separately.
+
 ## Layout
 
 ```text
@@ -137,7 +162,7 @@ Commit `.gitattributes` with the matching files. `--local` keeps project setup f
 │   └── dot_zshrc          # Interactive shell
 ├── scripts/               # Installation scripts
 │   ├── install.sh         # Entry point
-│   └── lib/               # Homebrew and Oh My Zsh functions
+│   └── lib/               # Installation and initialization functions
 ├── tests/                 # Behavior tests and helpers
 └── .github/workflows/     # CI checks
 ```
