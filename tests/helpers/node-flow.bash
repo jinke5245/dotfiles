@@ -2,7 +2,7 @@
 
 node_flow_prepare() {
   local node_source corepack_source
-  node_source="$(env -i HOME="$SANDBOX_HOME" PATH="$PATH" node -p 'process.execPath')" || return
+  node_source="$(env -i HOME="$SANDBOX_HOME" PATH="$PATH" "${NODE_SOURCE:-node}" -p 'process.execPath')" || return
   corepack_source="${COREPACK_SOURCE:-${node_source%/bin/node}/lib/node_modules/corepack}"
 
   # Reuse Node in place so native library paths still resolve. Copy Corepack and

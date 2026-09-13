@@ -126,7 +126,8 @@ setup_check_flow() {
 
   run -0 setup_shell 'exec zsh -lic "$1" _ "$2"' _ '
     [[ $HOMEBREW_PREFIX = "$1" ]] &&
-    [[ $path[1] = "$HOME/bin" && $path[2] = "$HOME/.local/bin" ]] &&
+    [[ $path[1] = "$FNM_MULTISHELL_PATH/bin" ]] &&
+    [[ $(command -v node) = "$FNM_MULTISHELL_PATH/bin/node" ]] &&
     [[ $ZSH_THEME = robbyrussell ]] &&
     [[ ${aliases[gst]} = "git status --short" ]] &&
     [[ $EDITOR = nvim ]] &&
@@ -139,6 +140,7 @@ setup_check_flow() {
 
   # Package-manager diagnostics are separate from a quiet shell startup.
   run -0 setup_shell 'exec zsh -lc "$1"' _ '
+    [[ $path[1] = "$HOME/bin" && $path[2] = "$HOME/.local/bin" ]] &&
     brew bundle check --file="$HOME/dotfiles/Brewfile" --no-upgrade &&
     brew list --versions > "$HOME/.test-package-versions"
   '

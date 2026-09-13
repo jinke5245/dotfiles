@@ -34,6 +34,7 @@ Group integration suites by responsibility: `chezmoi`, `install`, `git`, `ssh`, 
 | [integration/harness/setup-container-safety.bats](integration/harness/setup-container-safety.bats) | Container setup reports missing Docker and stops before attempting installation.                                                      |
 | [integration/harness/setup-macos-safety.bats](integration/harness/setup-macos-safety.bats)         | macOS setup refuses local, act, and self-hosted execution before installation or removal.                                             |
 | [e2e/chezmoi-flow.bats](e2e/chezmoi-flow.bats)                                                     | Real Oh My Zsh, native shell startup, offline Node preparation, SSH keys, local preservation, repeat applies, and script changes.     |
+| [e2e/development-flow.bats](e2e/development-flow.bats)                                             | Real Go / Node / Python execution, project version switching, offline failures, and preservation of tools and project environments.   |
 | [e2e/git-flow.bats](e2e/git-flow.bats)                                                             | Login-shell Git discovery, local identity preservation, real LFS filtering, and project setup without changing global files.          |
 | [e2e/zsh-plugins.bats](e2e/zsh-plugins.bats)                                                       | Completion initialization, real interactive plugin behavior, and local key-binding overrides.                                         |
 | [e2e/setup.bats](e2e/setup.bats)                                                                   | Documented Ubuntu setup, saved identity, Git / SSH initialization, local edits, login startup, and repeat application.                |
@@ -68,6 +69,14 @@ Both `test-e2e` and `test-setup` use macOS / Ubuntu matrices. E2E preparation in
 
 Bats tags keep the suites separate: `test:e2e` excludes `network`, `test:setup` selects `network,container`, and the CI-only `test:setup:macos` selects `network,macos`. Neither setup suite runs through `pnpm test` or `pnpm check`.
 
+Development E2E requires two different prepared Node versions and an available Python 3 interpreter. Set `NODE_ALTERNATE_SOURCE` to the second Node executable; optional `NODE_SOURCE` and `PYTHON_SOURCE` override the runner's `node` and `python3`. Use absolute executable paths. CI prepares Node 22 and 24 under the runner's temporary directory before running offline tests.
+
+```sh
+OMZ_SOURCE=/path/to/ohmyzsh \
+  NODE_ALTERNATE_SOURCE=/path/to/another/node \
+  pnpm test:e2e
+```
+
 ## Isolation
 
 Identity initialization tests run real chezmoi and Git with temporary homes, configuration, and source copies. Synthetic values exercise native prompts and unattended inputs; initialization must leave Git files unchanged and never run installers or generate SSH keys.
@@ -87,6 +96,8 @@ SSH integration tests require `ssh-keygen` and generate real keys only in tempor
 Zsh platform cases use chezmoi data overrides and temporary installation paths. These cases do not replace native tests on each OS.
 
 Development integration cases use a strict fnm fixture for the two shell setup commands and real Zsh completion discovery. Runtime and package-manager fixtures reject startup-time invocations. E2E uses real fnm, uv, and uvx completion definitions and verifies that starting a shell with a missing project Node version does not install it.
+
+`development-flow.bats` uses two real Node executables with separate test-owned fnm entries; versions are never simulated. Small dependency-free projects exercise Go execution and `go install`, Node switching through `.node-version` / `.nvmrc`, and uv virtual environments. Python executables are read-only inputs; virtual environments, Go build caches, installed commands, and project files stay inside the sandbox. Shell helpers disable uv downloads, Go module lookup, and Go toolchain downloads. Repeated apply must preserve installed tools, both Node versions, Python environments, project dependencies, and local overrides.
 
 `chezmoi-flow.bats` runs the real Oh My Zsh installer and Git fetch against a local snapshot of the supplied checkout's committed files. It installs only inside a temporary home, disables update checks, and blocks remote Git protocols and unexpected installer downloads.
 

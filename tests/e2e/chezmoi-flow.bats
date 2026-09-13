@@ -48,6 +48,8 @@ setup() {
   local mode
   for mode in -lic -ic; do
     run -0 sandbox_zsh "$mode" '
+      [[ $path[1] = "$FNM_MULTISHELL_PATH/bin" ]] &&
+      [[ $(command -v node) = "$FNM_MULTISHELL_PATH/bin/node" ]] &&
       [[ $ZSH_THEME = robbyrussell ]] &&
       [[ $PROMPT = *git_prompt_info* ]] &&
       [[ ${aliases[gst]} = "git status" ]] &&

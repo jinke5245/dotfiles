@@ -90,6 +90,11 @@ sandbox_zsh() (
     GIT_ASKPASS=/usr/bin/false \
     GIT_ALLOW_PROTOCOL=file \
     PYTHONDONTWRITEBYTECODE=1 \
+    UV_OFFLINE=true \
+    UV_PYTHON_DOWNLOADS=never \
+    GOPROXY=off \
+    GOSUMDB=off \
+    GOTOOLCHAIN=local \
     FNM_NODE_DIST_MIRROR=file:///dev/null \
     npm_config_offline=true \
     COREPACK_ENABLE_NETWORK=0 \

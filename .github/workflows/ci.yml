@@ -49,6 +49,17 @@ jobs:
         working-directory: ${{ runner.temp }}
       - uses: ./.github/actions/setup-homebrew
       - run: brew bundle install --file=Brewfile --no-upgrade
+      - name: Prepare E2E Node versions
+        run: |
+          fnm install 22
+          fnm install 24
+          node_source="$(fnm exec --using 22 node -p 'process.execPath')"
+          node_alternate_source="$(fnm exec --using 24 node -p 'process.execPath')"
+          echo "NODE_SOURCE=$node_source" >> "$GITHUB_ENV"
+          echo "NODE_ALTERNATE_SOURCE=$node_alternate_source" >> "$GITHUB_ENV"
+        env:
+          FNM_DIR: ${{ runner.temp }}/e2e-fnm
+          FNM_COREPACK_ENABLED: "false"
       - uses: ./.github/actions/setup-chezmoi
       - run: pnpm test:e2e
         env:
