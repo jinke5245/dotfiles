@@ -37,8 +37,8 @@ Group integration suites by responsibility: `chezmoi`, `install`, `git`, `ssh`, 
 | [e2e/development-flow.bats](e2e/development-flow.bats)                                             | Real Go / Node / Python execution, project version switching, offline failures, and preservation of tools and project environments.   |
 | [e2e/git-flow.bats](e2e/git-flow.bats)                                                             | Login-shell Git discovery, local identity preservation, real LFS filtering, and project setup without changing global files.          |
 | [e2e/zsh-plugins.bats](e2e/zsh-plugins.bats)                                                       | Completion initialization, real interactive plugin behavior, and local key-binding overrides.                                         |
-| [e2e/setup.bats](e2e/setup.bats)                                                                   | Documented Ubuntu setup, saved identity, Git / SSH initialization, local edits, login startup, and repeat application.                |
-| [e2e/setup-macos.bats](e2e/setup-macos.bats)                                                       | The same setup, Git, and SSH checks on a guarded GitHub-hosted macOS runner, including missing Homebrew.                              |
+| [e2e/setup.bats](e2e/setup.bats)                                                                   | Ubuntu setup, identity / SSH, language tools, pnpm and Python downloads, offline reuse, and repeat application.                       |
+| [e2e/setup-macos.bats](e2e/setup-macos.bats)                                                       | The same setup and development checks on a guarded GitHub-hosted macOS runner, including missing Homebrew.                            |
 
 ## Running
 
@@ -108,6 +108,10 @@ This flow suite requires existing Homebrew and installed Brewfile packages. A co
 `setup.bats` starts with no chezmoi, Homebrew, or Oh My Zsh in a fresh Ubuntu container. Root only provisions a test account with sudo access; that ordinary user follows the README prerequisites and installation steps. Supplied answers initialize `[data.user]` at the default config path before preview and apply. Repeat init needs no answers; init and preview must not install dependencies or create Git identity / SSH files. `NONINTERACTIVE=1` answers Homebrew's unattended-installation prompts.
 
 The first apply creates local Git identity and SSH keys from the saved inputs. Manual Git identity edits, an unrelated setting, and a comment are added before reapplying; local Git changes, saved inputs, SSH keys, and the pre-existing `.zshrc.local` must survive unchanged. After both applies, shared assertions check Homebrew Git tooling and login startup. Brewfile dependencies must be satisfied, and installed package versions must remain unchanged after reapplication.
+
+Both setup platforms use `helpers/setup-development.bash` to verify Homebrew Go / fnm / uv, the initial LTS Node, and Corepack's pnpm shim. Before project use, the isolated Corepack cache and uv-managed Python directory must be absent. A small Node project copies the repository's exact `packageManager` declaration and downloads that pnpm version on first use. A Python project explicitly requests uv-managed Python 3.13; this test choice does not change the shared setup defaults.
+
+Fresh shells then run the projects with Node, pnpm, Python, and Go downloads disabled. After reapplying, versions, Node's default, the installed Go command, project files, and the Python environment must remain unchanged and usable offline. HOME, XDG state, Corepack cache, and uv's Python directory stay inside the disposable environment. The full setup suites permit real downloads; default and offline E2E suites remain separate.
 
 Both setup platforms and the shell E2E flow use `helpers/ssh-flow.bash` to verify matching, unencrypted Ed25519 keys, the expected comment, and directory / key permissions. The caller supplies the expected email when initialization data is present; otherwise, the helper checks the default comment. Preview must not generate keys; repeated apply preserves their contents and modification times. Test keys and snapshots stay inside isolated homes or test directories.
 

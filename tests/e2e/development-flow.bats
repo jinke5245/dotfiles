@@ -79,7 +79,8 @@ setup() {
 
   run ! sandbox_zsh -lic 'uv venv --python 99.0 "$HOME/unavailable-python"'
 
-  [[ "$output" == *'download'* ]]
+  # uv versions describe a missing interpreter differently across platforms.
+  [[ "$output" == *'99.0'* ]]
   [ ! -e "$SANDBOX_HOME/unavailable-python" ]
 }
 

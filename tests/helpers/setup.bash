@@ -39,6 +39,9 @@ setup_container_shell() {
   docker exec --user dotfiles --workdir /home/dotfiles "$SETUP_CONTAINER" \
     env -i HOME=/home/dotfiles USER=dotfiles LOGNAME=dotfiles \
     PATH=/usr/local/bin:/usr/bin:/bin LC_ALL=C.UTF-8 TERM=dumb NONINTERACTIVE=1 \
+    XDG_DATA_HOME=/home/dotfiles/.local/share XDG_STATE_HOME=/home/dotfiles/.local/state \
+    XDG_CACHE_HOME=/home/dotfiles/.cache COREPACK_HOME=/home/dotfiles/.cache/corepack \
+    UV_PYTHON_INSTALL_DIR=/home/dotfiles/.local/share/uv/python PYTHONDONTWRITEBYTECODE=1 \
     bash --noprofile --norc -euo pipefail -c "$@"
 }
 
@@ -87,6 +90,25 @@ setup_check_ssh_keys() {
     source "$1/tests/helpers/ssh-flow.bash"
     ssh_flow_check initial@example.invalid
   ' _ "$SETUP_SOURCE"
+}
+
+setup_prepare_development() {
+  run -0 setup_shell 'exec zsh -lic "$1" _ "$2"' _ '
+    source "$1/tests/helpers/setup-development.bash"
+    setup_development_prepare
+  ' "$SETUP_SOURCE"
+}
+
+setup_check_development() {
+  # Block language downloads before startup, then reuse the prepared caches.
+  run -0 setup_shell '
+    export COREPACK_ENABLE_NETWORK=0 UV_OFFLINE=true UV_PYTHON_DOWNLOADS=never
+    export FNM_NODE_DIST_MIRROR=file:///dev/null GOPROXY=off GOTOOLCHAIN=local
+    exec zsh -lic "$1" _ "$2"
+  ' _ '
+    source "$1/tests/helpers/setup-development.bash"
+    setup_development_check
+  ' "$SETUP_SOURCE"
 }
 
 setup_check_flow() {
@@ -147,6 +169,8 @@ setup_check_flow() {
 
   setup_check_git_tools
   setup_check_ssh_keys
+  setup_prepare_development
+  setup_check_development
 
   # Follow the documented identity-edit commands before reapplying. The saved
   # inputs and SSH comment must remain independent of these later Git changes.
@@ -171,6 +195,8 @@ setup_check_flow() {
 
   run -0 setup_shell '
     export PATH="$HOME/.local/bin:$PATH"
+    export COREPACK_ENABLE_NETWORK=0 UV_OFFLINE=true UV_PYTHON_DOWNLOADS=never
+    export FNM_NODE_DIST_MIRROR=file:///dev/null
     cd "$HOME/dotfiles"
     chezmoi --source "$PWD" apply </dev/null
     configuration_diff="$(chezmoi --source "$PWD" diff --exclude scripts </dev/null)"
@@ -194,4 +220,5 @@ setup_check_flow() {
   setup_check_git_tools
   setup_check_git_configuration
   setup_check_ssh_keys
+  setup_check_development
 }
