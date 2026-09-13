@@ -1,3 +1,7 @@
+{{- $user := get . "user" | default dict -}}
 #!/usr/bin/env bash
 
-exec bash {{ joinPath .chezmoi.workingTree "scripts" "install.sh" | shellQuote }}
+# Single-quote arguments while preserving literal backslashes.
+exec bash '{{ joinPath .chezmoi.workingTree "scripts" "install.sh" | replace "'" "'\\''" }}' \
+  '{{ get $user "name" | default "" | replace "'" "'\\''" }}' \
+  '{{ get $user "email" | default "" | replace "'" "'\\''" }}'

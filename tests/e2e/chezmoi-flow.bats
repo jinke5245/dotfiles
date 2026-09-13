@@ -28,7 +28,7 @@ setup() {
 
   run -0 sandbox_zsh -lc '
     source "$1/tests/helpers/ssh-flow.bash"
-    ssh_flow_check
+    ssh_flow_check test@example.invalid
   ' _ "$SANDBOX_REPOSITORY"
   [ -z "$output" ]
 
@@ -86,7 +86,7 @@ setup() {
 
   run -0 sandbox_zsh -lc '
     source "$1/tests/helpers/ssh-flow.bash"
-    ssh_flow_check
+    ssh_flow_check test@example.invalid
   ' _ "$SANDBOX_REPOSITORY"
   [ -z "$output" ]
 

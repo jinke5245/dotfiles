@@ -52,4 +52,6 @@ flow_sandbox_create() {
   git config --file "$SANDBOX_HOME/.gitconfig" protocol.file.allow always
 
   FLOW_BREW_PREFIX="$(env -i HOME="$SANDBOX_HOME" PATH="$SANDBOX_PATH" brew --prefix)"
+
+  sandbox_init
 }

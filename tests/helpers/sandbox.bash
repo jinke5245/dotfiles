@@ -43,6 +43,7 @@ sandbox_copy_repository() {
 sandbox_chezmoi() (
   cd "$SANDBOX_ROOT" || return
 
+  # System Git configuration is test-owned, or empty when none is supplied.
   env -i \
     PATH="${SANDBOX_PATH:-$PATH}" \
     HOME="$SANDBOX_HOME" \
@@ -52,7 +53,10 @@ sandbox_chezmoi() (
     XDG_STATE_HOME="$SANDBOX_ROOT/state" \
     TMPDIR="$SANDBOX_ROOT/tmp" \
     LC_ALL=C \
-    GIT_CONFIG_NOSYSTEM=1 \
+    GIT_CONFIG_SYSTEM="${SANDBOX_GIT_SYSTEM:-/dev/null}" \
+    GIT_ALLOW_PROTOCOL=file \
+    GIT_TERMINAL_PROMPT=0 \
+    GIT_ASKPASS=/usr/bin/false \
     "$SANDBOX_CHEZMOI" \
     --source "$SANDBOX_REPOSITORY" \
     --destination "$SANDBOX_HOME" \
@@ -63,3 +67,10 @@ sandbox_chezmoi() (
     --no-pager --no-tty \
     "$@"
 )
+
+sandbox_init() {
+  # Initialize with real Git before testing apply; installer substitutes remain
+  # available for subsequent commands through SANDBOX_PATH.
+  SANDBOX_PATH="$PATH" sandbox_chezmoi init --config-path "$SANDBOX_CONFIG" \
+    --promptString 'User name=Dotfiles test,User email=test@example.invalid' < /dev/null
+}

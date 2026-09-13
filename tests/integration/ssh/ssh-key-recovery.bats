@@ -25,13 +25,12 @@ setup() {
   run -0 ssh_sandbox_run /bin/bash -c '
     umask 077
     source "$1"
-    initialize_ssh_keys
+    initialize_ssh_keys changed@example.invalid
   ' _ "$SANDBOX_REPOSITORY/scripts/lib/ssh.sh"
 
   ssh_assert_preserved "$SANDBOX_SSH_KEY" "$SANDBOX_ROOT/private.before"
   [ "$(ssh_file_mode "$SANDBOX_SSH_KEY.pub")" = 644 ]
-  [ "$(cut -d ' ' -f 1,2 "$SANDBOX_SSH_KEY.pub")" = \
-    "$(cut -d ' ' -f 1,2 "$SANDBOX_ROOT/expected.pub")" ]
+  cmp "$SANDBOX_SSH_KEY.pub" "$SANDBOX_ROOT/expected.pub"
   ssh_assert_key_pair
 
   cp -p "$SANDBOX_SSH_KEY.pub" "$SANDBOX_ROOT/public.before"
@@ -51,11 +50,12 @@ setup() {
 
   # Only the human input boundary is substituted; key decryption remains real.
   run -0 ssh_sandbox_run env SSH_ASKPASS="$SANDBOX_ROOT/askpass" \
-    /bin/bash -c 'source "$1" && initialize_ssh_keys' _ \
+    /bin/bash -c 'source "$1" && initialize_ssh_keys changed@example.invalid' _ \
     "$SANDBOX_REPOSITORY/scripts/lib/ssh.sh"
 
   ssh_assert_preserved "$SANDBOX_SSH_KEY" "$SANDBOX_ROOT/private.before"
   [ "$(ssh_file_mode "$SANDBOX_SSH_KEY.pub")" = 644 ]
+  [ "$(cut -d ' ' -f 3- "$SANDBOX_SSH_KEY.pub")" = fixture@example.invalid ]
   ssh_assert_key_pair 'dotfiles test passphrase'
 }
 

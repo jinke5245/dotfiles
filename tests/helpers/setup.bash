@@ -85,30 +85,43 @@ setup_check_git_configuration() {
 setup_check_ssh_keys() {
   run -0 setup_shell '
     source "$1/tests/helpers/ssh-flow.bash"
-    ssh_flow_check
+    ssh_flow_check initial@example.invalid
   ' _ "$SETUP_SOURCE"
 }
 
 setup_check_flow() {
   # Follow the README sequence, including PATH before the first login shell.
   run -0 setup_shell '
-    # A machine may already have local configuration before its first setup.
+    # Keep existing shell customization, but start without a Git identity.
     cp "$1/tests/fixtures/zsh/local.zsh" "$HOME/.zshrc.local"
-    mkdir -p "$HOME/.config/git"
-    cp "$1/tests/fixtures/git/local.config" "$HOME/.config/git/config.local"
+    test ! -e "$HOME/.config/git/config.local"
     sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin"
     export PATH="$HOME/.local/bin:$PATH"
     git clone https://github.com/jinke5245/dotfiles.git "$HOME/dotfiles"
     cd "$HOME/dotfiles"
-    chezmoi --source "$PWD" diff
+    chezmoi --source "$PWD" init \
+      --promptString "User name=Initial User,User email=initial@example.invalid" </dev/null
+    test -f "$HOME/.config/chezmoi/chezmoi.toml"
+    test "$(chezmoi --source "$PWD" execute-template "{{ .user.name }}")" = "Initial User"
+    test "$(chezmoi --source "$PWD" execute-template "{{ .user.email }}")" = initial@example.invalid
+
+    # Initialization and preview must leave Git, SSH, and dependencies untouched.
+    chezmoi --source "$PWD" diff </dev/null
+    test ! -e "$HOME/.config/git/config.local"
     test ! -e "$HOME/.oh-my-zsh"
     test ! -e "$HOME/.ssh/id_ed25519"
     test ! -e "$HOME/.ssh/id_ed25519.pub"
-    chezmoi --source "$PWD" apply
+    chezmoi --source "$PWD" apply </dev/null
     test -f "$HOME/.oh-my-zsh/oh-my-zsh.sh"
     cmp home/dot_zshrc "$HOME/.zshrc"
     cmp tests/fixtures/zsh/local.zsh "$HOME/.zshrc.local"
-    cmp tests/fixtures/git/local.config "$HOME/.config/git/config.local"
+    test "$(git -C / config --get user.name)" = "Initial User"
+    test "$(git -C / config --get user.email)" = initial@example.invalid
+
+    # With saved inputs available, initialization also works without prompts.
+    chezmoi --source "$PWD" init </dev/null
+    test "$(chezmoi --source "$PWD" execute-template "{{ .user.name }}")" = "Initial User"
+    test "$(chezmoi --source "$PWD" execute-template "{{ .user.email }}")" = initial@example.invalid
   ' _ "$SETUP_SOURCE"
 
   run -0 setup_shell 'exec zsh -lic "$1" _ "$2"' _ '
@@ -131,14 +144,23 @@ setup_check_flow() {
   '
 
   setup_check_git_tools
-  setup_check_git_configuration
   setup_check_ssh_keys
+
+  # Follow the documented identity-edit commands before reapplying. The saved
+  # inputs and SSH comment must remain independent of these later Git changes.
+  run -0 setup_shell '
+    git config --file "$HOME/.config/git/config.local" user.name "Dotfiles test"
+    git config --file "$HOME/.config/git/config.local" user.email test@example.invalid
+    git config --file "$HOME/.config/git/config.local" core.quotePath true
+    printf "\n# Keep this local comment.\n" >> "$HOME/.config/git/config.local"
+  '
+  setup_check_git_configuration
 
   # Snapshot managed and local configuration plus the installed framework.
   setup_shell '
     mkdir "$HOME/.test-before"
     for file in .zprofile .zshrc .zshrc.local .oh-my-zsh/oh-my-zsh.sh \
-      .config/git/config .config/git/config.local .gitconfig \
+      .config/chezmoi/chezmoi.toml .config/git/config .config/git/config.local .gitconfig \
       .ssh/id_ed25519 .ssh/id_ed25519.pub; do
       cp -p "$HOME/$file" "$HOME/.test-before/$(basename "$file")"
     done
@@ -148,8 +170,8 @@ setup_check_flow() {
   run -0 setup_shell '
     export PATH="$HOME/.local/bin:$PATH"
     cd "$HOME/dotfiles"
-    chezmoi --source "$PWD" apply
-    configuration_diff="$(chezmoi --source "$PWD" diff --exclude scripts)"
+    chezmoi --source "$PWD" apply </dev/null
+    configuration_diff="$(chezmoi --source "$PWD" diff --exclude scripts </dev/null)"
     test -z "$configuration_diff"
 
     # Repeated apply must not request upgrades of already installed packages.
@@ -157,7 +179,7 @@ setup_check_flow() {
     cmp "$HOME/.test-package-versions" "$HOME/.test-package-versions-after"
 
     for file in .zprofile .zshrc .zshrc.local .oh-my-zsh/oh-my-zsh.sh \
-      .config/git/config .config/git/config.local .gitconfig \
+      .config/chezmoi/chezmoi.toml .config/git/config .config/git/config.local .gitconfig \
       .ssh/id_ed25519 .ssh/id_ed25519.pub; do
       before="$HOME/.test-before/$(basename "$file")"
       cmp "$HOME/$file" "$before"

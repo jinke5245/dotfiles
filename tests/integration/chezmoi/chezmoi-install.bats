@@ -18,6 +18,7 @@ setup() {
   run -0 install_sandbox_run bash -c '
     source "$1/lib/homebrew.sh" &&
       source "$1/lib/oh-my-zsh.sh" &&
+      source "$1/lib/git.sh" &&
       source "$1/lib/ssh.sh"
   ' _ "$SANDBOX_REPOSITORY/scripts"
 
@@ -26,6 +27,7 @@ setup() {
   [ ! -e "$SANDBOX_HOME/.install-test/oh-my-zsh.log" ]
   [ ! -e "$SANDBOX_HOME/.oh-my-zsh" ]
   [ ! -e "$SANDBOX_HOME/.ssh" ]
+  [ ! -e "$SANDBOX_HOME/.config/git/config.local" ]
 }
 
 @test "chezmoi installs dependencies before writing managed configuration" {

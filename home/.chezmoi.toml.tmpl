@@ -1,0 +1,28 @@
+{{- /* Preserve existing settings when init regenerates the local configuration. */ -}}
+{{- $config := dict -}}
+{{- if stat .chezmoi.configFile -}}
+{{- $config = include .chezmoi.configFile | fromToml -}}
+{{- end -}}
+{{- $data := get $config "data" | default dict -}}
+{{- $user := get . "user" | default dict -}}
+
+{{- range $field := list "name" "email" -}}
+{{- /* Read default global files without repository discovery or environment overrides. */ -}}
+{{- $value := output "env" "-u" "GIT_CONFIG" "-u" "GIT_CONFIG_GLOBAL" "-u" "GIT_CONFIG_PARAMETERS"
+    "GIT_CONFIG_COUNT=0" "GIT_CONFIG_NOSYSTEM=1"
+    "git" "--git-dir=/dev/null" "config" "--includes" "--default" "" "--get" (printf "user.%s" $field) | trim -}}
+{{- if not $value -}}
+{{- $value = get $user $field | default "" | trim -}}
+{{- end -}}
+{{- if not $value -}}
+{{- $value = promptString (printf "User %s" $field) | trim -}}
+{{- end -}}
+{{- if not $value -}}
+{{- fail (printf "User %s is required; supply it during chezmoi init." $field) -}}
+{{- end -}}
+{{- $_ := set $user $field $value -}}
+{{- end -}}
+
+{{- $_ := set $data "user" $user -}}
+{{- $_ := set $config "data" $data -}}
+{{ $config | toToml }}
