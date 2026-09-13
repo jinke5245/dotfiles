@@ -114,7 +114,7 @@ EOF
   [ "$(cat "$SANDBOX_HOME/script-runs")" = "$(printf 'library\nentry')" ]
 }
 
-@test "offline apply enables pnpm inside the copied Node installation" {
+@test "offline apply enables pnpm only inside the isolated Node installation" {
   cp -p "$NODE_FLOW_RUNTIME/bin/node" "$SANDBOX_ROOT/node.before"
   cp -p "$NODE_FLOW_RUNTIME/lib/node_modules/corepack/dist/corepack.js" "$SANDBOX_ROOT/corepack.before"
 
@@ -122,6 +122,9 @@ EOF
   run -0 sandbox_chezmoi apply
 
   [ -x "$NODE_FLOW_RUNTIME/bin/pnpm" ]
+  [ "$(readlink "$NODE_FLOW_RUNTIME/bin/pnpm")" = ../lib/node_modules/corepack/dist/pnpm.js ]
+  [ ! -L "$NODE_FLOW_RUNTIME/lib/node_modules/corepack" ]
+  run -0 sandbox_zsh -lic 'node --version && corepack --version'
   cmp "$NODE_FLOW_RUNTIME/bin/node" "$SANDBOX_ROOT/node.before"
   cmp "$NODE_FLOW_RUNTIME/lib/node_modules/corepack/dist/corepack.js" "$SANDBOX_ROOT/corepack.before"
   [ ! "$NODE_FLOW_RUNTIME/bin/node" -nt "$SANDBOX_ROOT/node.before" ]
@@ -136,4 +139,20 @@ EOF
   [[ "$output" == *'file:///dev/null'* ]] || return 1
   [ ! -e "$fnm_directory/aliases/default" ]
   [ ! -e "$SANDBOX_HOME/.zprofile" ]
+}
+
+@test "interactive startup leaves a missing project Node version uninstalled" {
+  sandbox_chezmoi apply
+  printf '999.0.0\n' > "$SANDBOX_ROOT/.node-version"
+  local expected_version fnm_directory
+  expected_version="$("$NODE_FLOW_RUNTIME/bin/node" --version)"
+  fnm_directory="${NODE_FLOW_RUNTIME%/node-versions/*}"
+
+  run -0 --separate-stderr sandbox_zsh -lic '
+    [[ -n $FNM_MULTISHELL_PATH && ${_comps[fnm]} = _fnm ]] && node --version
+  '
+
+  [ "$output" = "$expected_version" ]
+  [ -z "$stderr" ]
+  [ ! -e "$fnm_directory/node-versions/v999.0.0" ]
 }

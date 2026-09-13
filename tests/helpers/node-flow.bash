@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
 node_flow_prepare() {
-  local node_source
+  local node_source corepack_source
   node_source="$(env -i HOME="$SANDBOX_HOME" PATH="$PATH" node -p 'process.execPath')" || return
+  corepack_source="${COREPACK_SOURCE:-${node_source%/bin/node}/lib/node_modules/corepack}"
 
-  # Copy the test runner's Node and Corepack; never link writable runtime state
-  # back to the host installation or download dependencies in the offline suite.
+  # Reuse Node in place so native library paths still resolve. Copy Corepack and
+  # keep generated shims and all writable runtime state inside the sandbox.
   # shellcheck disable=SC2016,SC2034
   NODE_FLOW_RUNTIME="$(env -i \
     HOME="$SANDBOX_HOME" PATH="$SANDBOX_PATH" \
@@ -13,9 +14,8 @@ node_flow_prepare() {
     XDG_CACHE_HOME="$SANDBOX_ROOT/cache" TMPDIR="$SANDBOX_ROOT/tmp" \
     FNM_NODE_DIST_MIRROR=file:///dev/null \
     bash -euo pipefail -c '
-      corepack_source="${1%/bin/node}/lib/node_modules/corepack"
-      if [ ! -f "$corepack_source/dist/corepack.js" ]; then
-        printf "E2E: the test runner needs Node with Corepack installed alongside it.\n" >&2
+      if [ ! -f "$2/dist/corepack.js" ]; then
+        printf "E2E: set COREPACK_SOURCE to a prepared Corepack package directory.\n" >&2
         exit 1
       fi
 
@@ -24,10 +24,10 @@ node_flow_prepare() {
       version="$("$1" --version)"
       runtime="$FNM_DIR/node-versions/$version/installation"
       mkdir -p "$runtime/bin" "$runtime/lib/node_modules"
-      cp "$1" "$runtime/bin/node"
-      cp -RL "$corepack_source" "$runtime/lib/node_modules/corepack"
+      ln -s "$1" "$runtime/bin/node"
+      cp -RL "$2" "$runtime/lib/node_modules/corepack"
       ln -s ../lib/node_modules/corepack/dist/corepack.js "$runtime/bin/corepack"
       fnm default "$version"
       printf "%s\n" "$runtime"
-    ' _ "$node_source")"
+    ' _ "$node_source" "$corepack_source")"
 }

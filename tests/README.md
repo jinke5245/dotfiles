@@ -26,6 +26,7 @@ Group integration suites by responsibility: `chezmoi`, `install`, `git`, `ssh`, 
 | [integration/ssh/ssh-key-recovery.bats](integration/ssh/ssh-key-recovery.bats)                     | Public-key recovery, original comments, encrypted keys, Ed25519 validation, preservation, and failure handling.                       |
 | [integration/ssh/ssh-install.bats](integration/ssh/ssh-install.bats)                               | Saved email on apply, default comments, Git independence, preview, preservation, recovery, and failure propagation.                   |
 | [integration/zsh/zsh-startup.bats](integration/zsh/zsh-startup.bats)                               | Zsh syntax, startup modes, Homebrew selection, PATH handling, and missing Oh My Zsh.                                                  |
+| [integration/zsh/zsh-development.bats](integration/zsh/zsh-development.bats)                       | fnm environment and completion order, uv/uvx discovery and auditing, missing dependencies, local overrides, and Go tool paths.        |
 | [integration/zsh/zsh-plugins.bats](integration/zsh/zsh-plugins.bats)                               | Completion auditing, plugin loading order, prefix discovery and absence, missing dependencies, and arrow bindings.                    |
 | [integration/zsh/zsh-local.bats](integration/zsh/zsh-local.bats)                                   | Local overrides, missing and unreadable files, startup modes, repeat-apply preservation, and Git / chezmoi exclusions.                |
 | [integration/harness/sandbox-isolation.bats](integration/harness/sandbox-isolation.bats)           | Current edits and new files are copied; ignored private data, Git metadata, and deleted files are excluded.                           |
@@ -77,13 +78,15 @@ Installation tests serve local installer fixtures instead of downloading scripts
 
 Node installation tests substitute fnm, npm, and Corepack with strict command fixtures. Their state and executable paths stay inside the sandbox; unrelated tools on PATH reject calls. These tests cover installation decisions and failure handling without downloading Node.js, Python, or pnpm. Real runtime execution belongs to E2E and setup coverage.
 
-Offline E2E copies the test runner's Node executable and accompanying Corepack package into a temporary fnm installation. Corepack enables pnpm only in that copy. The runner must have fnm on PATH and Corepack installed alongside Node; missing prerequisites fail without installation. The shared apply and shell helpers disable npm and Corepack network access and give fnm a non-network mirror, so missing runtime preparation also fails without downloading software.
+Offline E2E creates a temporary fnm installation, symlinking the runner's Node executable to preserve native library lookup and copying Corepack into it. All generated shims and writable state stay in the sandbox. Set `COREPACK_SOURCE` to a prepared Corepack package directory when Node does not bundle it; CI prepares this package under the runner's temporary directory. Missing prerequisites fail without installation. The shared apply and shell helpers disable npm and Corepack network access and give fnm a non-network mirror, so missing runtime preparation also fails without downloading software.
 
 Git integration tests use real Git with a temporary HOME, a test-owned system configuration, and an empty inherited environment. Git discovers the deployed `~/.config/git/config` through its normal XDG lookup. Repositories and remotes are local; network Git protocols and credential prompts are disabled. A substitute `gh` exercises the credential protocol with synthetic values. LFS filter execution with real dependencies belongs to E2E coverage.
 
 SSH integration tests require `ssh-keygen` and generate real keys only in temporary homes, with explicit key paths and an empty inherited environment. No SSH connections are made. Tests substitute only passphrase input through a test-owned askpass program; unavailable input fails immediately without opening a terminal prompt. Private-key contents are never printed or stored in fixtures.
 
 Zsh platform cases use chezmoi data overrides and temporary installation paths. These cases do not replace native tests on each OS.
+
+Development integration cases use a strict fnm fixture for the two shell setup commands and real Zsh completion discovery. Runtime and package-manager fixtures reject startup-time invocations. E2E uses real fnm, uv, and uvx completion definitions and verifies that starting a shell with a missing project Node version does not install it.
 
 `chezmoi-flow.bats` runs the real Oh My Zsh installer and Git fetch against a local snapshot of the supplied checkout's committed files. It installs only inside a temporary home, disables update checks, and blocks remote Git protocols and unexpected installer downloads.
 
