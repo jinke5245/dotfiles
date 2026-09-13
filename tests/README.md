@@ -8,6 +8,7 @@ Group integration suites by responsibility: `chezmoi`, `install`, `git`, `ssh`, 
 
 | File                                                                                               | Coverage                                                                                                                        |
 | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| [integration/chezmoi/chezmoi-init.bats](integration/chezmoi/chezmoi-init.bats)                     | Identity precedence, interactive and unattended inputs, local persistence, configuration preservation, and failures.            |
 | [integration/chezmoi/chezmoi-layout.bats](integration/chezmoi/chezmoi-layout.bats)                 | Source discovery, target paths, deployment exclusions, repeatable application, and unrelated files.                             |
 | [integration/chezmoi/chezmoi-install.bats](integration/chezmoi/chezmoi-install.bats)               | Installation before configuration, failure propagation, repeatable application, and changes to external scripts.                |
 | [integration/chezmoi/chezmoi-usage.bats](integration/chezmoi/chezmoi-usage.bats)                   | Configuration application from a clone, previewing changes, and applying pulled updates using a local Git remote.               |
@@ -64,6 +65,8 @@ Both `test-e2e` and `test-setup` use macOS / Ubuntu matrices. E2E preparation in
 Bats tags keep the suites separate: `test:e2e` excludes `network`, `test:setup` selects `network,container`, and the CI-only `test:setup:macos` selects `network,macos`. Neither setup suite runs through `pnpm test` or `pnpm check`.
 
 ## Isolation
+
+Identity initialization tests run real chezmoi and Git with temporary homes, configuration, and source copies. Synthetic values exercise native prompts and unattended inputs; initialization must leave Git files unchanged and never run installers or generate SSH keys.
 
 Installation tests serve local installer fixtures instead of downloading scripts. System prefixes are relocated only in disposable repository copies; tests never install into real system directories.
 

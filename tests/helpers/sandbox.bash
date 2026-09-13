@@ -63,3 +63,10 @@ sandbox_chezmoi() (
     --no-pager --no-tty \
     "$@"
 )
+
+sandbox_init() {
+  # Initialize with real Git before testing apply; installer substitutes remain
+  # available for subsequent commands through SANDBOX_PATH.
+  SANDBOX_PATH="$PATH" sandbox_chezmoi init --config-path "$SANDBOX_CONFIG" \
+    --promptString 'User name=Dotfiles test,User email=test@example.invalid' < /dev/null
+}

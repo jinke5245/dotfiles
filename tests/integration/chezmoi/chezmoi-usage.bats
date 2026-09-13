@@ -30,6 +30,7 @@ usage_git() {
   usage_git -C "$upstream" commit --quiet -m 'Initial configuration'
   usage_git clone "$upstream" "$SANDBOX_REPOSITORY"
 
+  run -0 sandbox_init
   run -0 sandbox_chezmoi diff
   [ ! -e "$SANDBOX_HOME/.zshrc" ]
 

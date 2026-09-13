@@ -46,6 +46,7 @@ setup() {
 }
 
 @test "reapplying unchanged configuration leaves managed files unchanged" {
+  sandbox_init
   sandbox_chezmoi apply --exclude scripts
   [ -f "$SANDBOX_HOME/.layout-test" ]
   touch -t 200001010000 "$SANDBOX_HOME/.layout-test"
