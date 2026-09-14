@@ -53,7 +53,7 @@ setup() {
   done
 }
 
-@test "real LFS filters round-trip binary content and project setup preserves global files" {
+@test "login shells expose Git LFS and shared configuration" {
   mkdir -p "$SANDBOX_HOME/.config/git"
   cp "$SANDBOX_REPOSITORY/tests/fixtures/git/local.config" "$SANDBOX_HOME/.config/git/config.local"
   sandbox_chezmoi apply
