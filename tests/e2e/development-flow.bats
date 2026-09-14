@@ -46,20 +46,6 @@ setup() {
   [ "$output" = node:ok ]
 }
 
-@test "directory changes select real Node versions from node-version and nvmrc files" {
-  run -0 sandbox_zsh -lic '
-    cd "$HOME/projects/node-alternate" > /dev/null &&
-    [[ $(node --version) = "$2" && $(fnm current) = "$2" ]] &&
-    node main.cjs &&
-    cd "$HOME/projects/node" > /dev/null &&
-    [[ $(node --version) = "$1" && $(fnm current) = "$1" ]] &&
-    node main.cjs &&
-    [[ $(fnm default) = "$1" ]]
-  ' _ "$DEVELOPMENT_NODE_VERSION" "$DEVELOPMENT_ALTERNATE_VERSION"
-
-  [ "$output" = "$(printf 'node:ok\nnode:ok')" ]
-}
-
 @test "uv creates and runs a Python environment without activating it in the shell" {
   run -0 sandbox_zsh -lic '
     cd "$HOME/projects/python" &&
@@ -84,7 +70,7 @@ setup() {
   [ ! -e "$SANDBOX_HOME/unavailable-python" ]
 }
 
-@test "repeated apply preserves Node versions, project environments, and local overrides" {
+@test "repeated apply preserves the Node installation, project environments, and local overrides" {
   run -0 sandbox_zsh -lic 'uv venv --quiet --python "$1" "$HOME/projects/python/.venv"' \
     _ "$DEVELOPMENT_PYTHON_SOURCE"
 
@@ -97,7 +83,6 @@ setup() {
   local files=(
     .zshrc.local
     projects/node/.node-version
-    projects/node-alternate/.nvmrc
     projects/node/node_modules/local-fixture/index.cjs
     projects/python/.venv/pyvenv.cfg
   )
@@ -127,12 +112,11 @@ setup() {
   run -0 sandbox_zsh -lic '
     [[ $DEVELOPMENT_LOCAL = preserved ]] &&
     cd "$HOME/projects/node" > /dev/null &&
-    node -p "require(process.argv[1])" "$PWD/node_modules/local-fixture/index.cjs" &&
-    cd "$HOME/projects/node-alternate" > /dev/null &&
     [[ $(node --version) = "$1" ]] &&
+    node -p "require(process.argv[1])" "$PWD/node_modules/local-fixture/index.cjs" &&
     cd "$HOME/projects/python" > /dev/null &&
     uv run --no-project --python .venv/bin/python main.py
-  ' _ "$DEVELOPMENT_ALTERNATE_VERSION"
+  ' _ "$DEVELOPMENT_NODE_VERSION"
 
   [ "$output" = "$(printf 'local:ok\npython:ok')" ]
 }

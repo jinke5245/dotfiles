@@ -311,6 +311,7 @@ See [tests/README.md](tests/README.md) for suite coverage, execution requirement
 
 - Separate setup, execution, and assertions with blank lines. Comment non-obvious fixture behavior and isolation choices; use readable multiline snippets.
 - Assert exit status, output, and resulting files. Avoid coupling tests to implementation details.
+- Limit third-party tool coverage to installation, configuration integration, basic execution, and preservation across apply. Leave detailed tool behavior to upstream tests.
 - Test real repository copies with isolated home, configuration, cache, and state paths. Leave the checkout and real home untouched.
 - Keep default tests offline and independent of execution order. Use controlled substitutes at external boundaries when needed.
 - Share suites across platforms. Use CI matrices for OS coverage and Bats tags for execution requirements.

@@ -1,5 +1,4 @@
 --platform=ubuntu-latest=ghcr.io/catthehacker/ubuntu:runner-24.04
-# Allow the runner to access a Docker socket owned by group 0.
 --container-options=--group-add=0
 --workflows=.github/workflows/ci.yml
 --rm
