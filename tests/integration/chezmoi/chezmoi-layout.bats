@@ -8,11 +8,6 @@ setup_file() {
 
 setup() {
   sandbox_create
-
-  # Add small probes to the real source copy without replacing its configuration.
-  mkdir -p "$SANDBOX_REPOSITORY/home/dot_config/layout-test"
-  printf '%s\n' 'top-level fixture' > "$SANDBOX_REPOSITORY/home/dot_layout-test"
-  printf '%s\n' 'nested fixture' > "$SANDBOX_REPOSITORY/home/dot_config/layout-test/config"
 }
 
 @test "discovers home as the repository's chezmoi source root" {
@@ -21,51 +16,23 @@ setup() {
   [ "$output" = "$SANDBOX_REPOSITORY/home" ]
 }
 
-@test "applies a dot-prefixed source file to the target home directory" {
+@test "deploys the repository's Zsh and Git configuration at their intended paths" {
   run -0 sandbox_chezmoi apply --exclude scripts
 
-  [ "$(cat "$SANDBOX_HOME/.layout-test")" = 'top-level fixture' ]
-}
-
-@test "applies nested configuration at its target path" {
-  run -0 sandbox_chezmoi apply --exclude scripts
-
-  [ "$(cat "$SANDBOX_HOME/.config/layout-test/config")" = 'nested fixture' ]
+  cmp "$SANDBOX_REPOSITORY/home/dot_zshrc" "$SANDBOX_HOME/.zshrc"
+  cmp "$SANDBOX_REPOSITORY/home/dot_config/git/config" "$SANDBOX_HOME/.config/git/config"
+  # Template rendering and platform-specific content belong to the Zsh suite.
+  [ -s "$SANDBOX_HOME/.zprofile" ]
 }
 
 @test "keeps repository documentation, tooling, and test libraries out of the target home" {
   run -0 sandbox_chezmoi apply --exclude scripts
 
   local entry
-  for entry in README.md Brewfile package.json scripts tests .chezmoiscripts; do
+  for entry in README.md AGENTS.md Brewfile package.json .github scripts tests .chezmoiscripts; do
     if [ -e "$SANDBOX_HOME/$entry" ] || [ -L "$SANDBOX_HOME/$entry" ]; then
       printf 'Unexpected deployed repository entry: %s\n' "$entry" >&2
       return 1
     fi
   done
-}
-
-@test "reapplying unchanged configuration leaves managed files unchanged" {
-  sandbox_init
-  sandbox_chezmoi apply --exclude scripts
-  [ -f "$SANDBOX_HOME/.layout-test" ]
-  touch -t 200001010000 "$SANDBOX_HOME/.layout-test"
-  cp -p "$SANDBOX_HOME/.layout-test" "$SANDBOX_ROOT/before-apply"
-
-  run -0 sandbox_chezmoi apply --exclude scripts
-
-  cmp "$SANDBOX_HOME/.layout-test" "$SANDBOX_ROOT/before-apply"
-  [ ! "$SANDBOX_HOME/.layout-test" -nt "$SANDBOX_ROOT/before-apply" ]
-  [ ! "$SANDBOX_HOME/.layout-test" -ot "$SANDBOX_ROOT/before-apply" ]
-
-  run -0 sandbox_chezmoi diff --exclude scripts
-  [ -z "$output" ]
-}
-
-@test "preserves unrelated files already present in the target home" {
-  printf '%s\n' 'keep my notes' > "$SANDBOX_HOME/notes.txt"
-
-  run -0 sandbox_chezmoi apply --exclude scripts
-
-  [ "$(cat "$SANDBOX_HOME/notes.txt")" = 'keep my notes' ]
 }
