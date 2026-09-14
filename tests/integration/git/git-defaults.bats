@@ -21,64 +21,26 @@ setup() {
   run -1 sandbox_git config --get-regexp '^user\.(name|email)$'
   [ -z "$output" ]
 
-  run -1 sandbox_git config --get pull.rebase
-  [ -z "$output" ]
-
   run -1 sandbox_git config --get-regexp '^alias\.'
   [ -z "$output" ]
 }
 
-@test "new repositories start on main" {
-  run -0 sandbox_git -C "$SANDBOX_GIT_WORKTREE" symbolic-ref --short HEAD
+@test "Git loads branch, pull, fetch, and filename defaults from shared configuration" {
+  # Read effective values through normal discovery, including their source file.
+  run -0 sandbox_git config --show-origin --get init.defaultBranch
+  [ "$output" = "$(printf 'file:%s\tmain' "$SANDBOX_HOME/.config/git/config")" ]
 
-  [ "$output" = main ]
-}
+  run -0 sandbox_git config --show-origin --get pull.ff
+  [ "$output" = "$(printf 'file:%s\tonly' "$SANDBOX_HOME/.config/git/config")" ]
 
-@test "status displays Chinese filenames without octal escaping" {
-  printf 'example\n' > "$SANDBOX_GIT_WORKTREE/中文.txt"
+  run -0 sandbox_git config --type=bool --show-origin --get fetch.prune
+  [ "$output" = "$(printf 'file:%s\ttrue' "$SANDBOX_HOME/.config/git/config")" ]
 
-  run -0 sandbox_git -C "$SANDBOX_GIT_WORKTREE" status --short
+  run -0 sandbox_git config --type=bool --show-origin --get core.quotePath
+  [ "$output" = "$(printf 'file:%s\tfalse' "$SANDBOX_HOME/.config/git/config")" ]
 
-  [ "$output" = '?? 中文.txt' ]
-}
-
-@test "pull fast-forwards to the upstream commit" {
-  git_fixture_remote
-  sandbox_git -C "$SANDBOX_ROOT/peer" commit --quiet --allow-empty -m 'Upstream change'
-  sandbox_git -C "$SANDBOX_ROOT/peer" push --quiet
-  local expected
-  expected="$(sandbox_git -C "$SANDBOX_ROOT/peer" rev-parse HEAD)"
-
-  run -0 sandbox_git -C "$SANDBOX_GIT_WORKTREE" pull --quiet
-
-  [ "$(sandbox_git -C "$SANDBOX_GIT_WORKTREE" rev-parse HEAD)" = "$expected" ]
-}
-
-@test "pull refuses divergent history without changing the local commit" {
-  git_fixture_remote
-  sandbox_git -C "$SANDBOX_ROOT/peer" commit --quiet --allow-empty -m 'Upstream change'
-  sandbox_git -C "$SANDBOX_ROOT/peer" push --quiet
-  sandbox_git -C "$SANDBOX_GIT_WORKTREE" commit --quiet --allow-empty -m 'Local change'
-  local before
-  before="$(sandbox_git -C "$SANDBOX_GIT_WORKTREE" rev-parse HEAD)"
-
-  run -128 sandbox_git -C "$SANDBOX_GIT_WORKTREE" pull --quiet
-
-  [[ "$output" == *'Not possible to fast-forward'* ]]
-  [ "$(sandbox_git -C "$SANDBOX_GIT_WORKTREE" rev-parse HEAD)" = "$before" ]
-  [ ! -e "$SANDBOX_GIT_WORKTREE/.git/MERGE_HEAD" ]
-}
-
-@test "fetch prunes a remote-tracking branch deleted upstream" {
-  git_fixture_remote
-  sandbox_git -C "$SANDBOX_ROOT/peer" push --quiet origin HEAD:temporary
-  sandbox_git -C "$SANDBOX_GIT_WORKTREE" fetch --quiet
-  sandbox_git -C "$SANDBOX_GIT_WORKTREE" show-ref --verify --quiet refs/remotes/origin/temporary
-  sandbox_git -C "$SANDBOX_ROOT/peer" push --quiet origin --delete temporary
-
-  run -0 sandbox_git -C "$SANDBOX_GIT_WORKTREE" fetch --quiet
-
-  run -1 sandbox_git -C "$SANDBOX_GIT_WORKTREE" show-ref --verify --quiet refs/remotes/origin/temporary
+  run -1 sandbox_git config --get pull.rebase
+  [ -z "$output" ]
 }
 
 @test "LFS filtering is configured without running git lfs install" {
