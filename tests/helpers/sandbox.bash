@@ -57,6 +57,9 @@ sandbox_chezmoi() (
     GIT_ALLOW_PROTOCOL=file \
     GIT_TERMINAL_PROMPT=0 \
     GIT_ASKPASS=/usr/bin/false \
+    FNM_NODE_DIST_MIRROR=file:///dev/null \
+    npm_config_offline=true \
+    COREPACK_ENABLE_NETWORK=0 \
     "$SANDBOX_CHEZMOI" \
     --source "$SANDBOX_REPOSITORY" \
     --destination "$SANDBOX_HOME" \

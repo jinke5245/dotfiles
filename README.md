@@ -52,7 +52,7 @@ chezmoi --source "$PWD" init \
 
 Both fields are required during initialization; missing input stops unattended setup. Initialization does not install software, change Git configuration, or generate SSH keys.
 
-Applying prepares Homebrew, installs the packages declared in `Brewfile`, installs Oh My Zsh, and initializes local Git identity and SSH keys before writing managed configuration. Homebrew and Oh My Zsh use their official installers; installation or initialization failures stop the apply. On Debian / Ubuntu, the script also installs [Homebrew's build prerequisites](https://docs.brew.sh/Homebrew-on-Linux).
+Applying prepares Homebrew, installs the packages declared in `Brewfile`, prepares Node.js and Corepack, installs Oh My Zsh, and initializes local Git identity and SSH keys before writing managed configuration. Homebrew and Oh My Zsh use their official installers; installation or initialization failures stop the apply. On Debian / Ubuntu, the script also installs [Homebrew's build prerequisites](https://docs.brew.sh/Homebrew-on-Linux).
 
 Start a login Zsh to load the environment and interactive configuration:
 
@@ -78,6 +78,56 @@ Run these commands from the repository root. Edit files under `home/`; changes m
 | Reload the login environment  | `exec zsh -l`                                |
 
 Each apply picks up changes to the Brewfile and installation scripts. Brewfile packages use `brew bundle install --no-upgrade`: missing packages are installed without requesting routine upgrades or removing other packages. Homebrew and Oh My Zsh upgrades remain managed by their own update mechanisms.
+
+### Development tools
+
+After setup, use the tools from a login Zsh:
+
+| Tool    | Setup behavior                                                                                                                                                             |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Go      | Install through Homebrew. Keep the default `GOROOT` and `GOPATH`; add `~/go/bin` to PATH for commands installed with `go install`.                                         |
+| Node.js | Install fnm through Homebrew. When no fnm default exists, install the latest LTS with `fnm install --lts`; preserve an existing default.                                   |
+| pnpm    | Enable Corepack for the default Node installation. Download pnpm on first use, following the project's `packageManager` field or Corepack's default when none is declared. |
+| Python  | Install uv through Homebrew without preinstalling Python. Let uv find or download an interpreter when explicitly used.                                                     |
+
+Shell startup initializes fnm and fnm / uv / uvx completion without installing or upgrading software. Reapplying preserves installed Node versions, the default, project environments, and local overrides. A broken fnm default stops apply and requires manual repair.
+
+#### Node.js and pnpm
+
+[fnm](https://github.com/Schniz/fnm#usage) switches installed versions when entering a directory with `.node-version` or `.nvmrc`. Missing versions require confirmation or an explicit install. From a project with a version file:
+
+```sh
+fnm install
+fnm use
+```
+
+Use `fnm use default` to return to the default, or `fnm default "$(fnm current)"` to make the selected version the default.
+
+For each additional Node installation, prepare [Corepack](https://github.com/nodejs/corepack#how-to-install) after selecting it with fnm. If that installation has no Corepack, install it into the selected environment:
+
+```sh
+npm install --global --prefix "$FNM_MULTISHELL_PATH" corepack
+```
+
+Then enable pnpm for that Node installation:
+
+```sh
+"$FNM_MULTISHELL_PATH/bin/corepack" enable pnpm --install-directory "$FNM_MULTISHELL_PATH/bin"
+pnpm --version
+```
+
+The first pnpm invocation needs network access unless its version is already cached. This repository uses Node 22 via `.node-version` and the pnpm version declared in `package.json`; its project version does not change fnm's default.
+
+#### Python
+
+Use [uv](https://docs.astral.sh/uv/pip/environments/) to create a project-local environment. For example, in a Python project directory:
+
+```sh
+uv venv --python 3.13
+uv run python --version
+```
+
+Choose the Python version per project; `3.13` is only an example. Environments are not automatically activated by shell startup. Use `uv run` to execute project commands, or `uvx <tool>` for a standalone Python tool.
 
 ### Local customization
 
@@ -261,6 +311,7 @@ See [tests/README.md](tests/README.md) for suite coverage, execution requirement
 
 - Separate setup, execution, and assertions with blank lines. Comment non-obvious fixture behavior and isolation choices; use readable multiline snippets.
 - Assert exit status, output, and resulting files. Avoid coupling tests to implementation details.
+- Limit third-party tool coverage to installation, configuration integration, basic execution, and preservation across apply. Leave detailed tool behavior to upstream tests.
 - Test real repository copies with isolated home, configuration, cache, and state paths. Leave the checkout and real home untouched.
 - Keep default tests offline and independent of execution order. Use controlled substitutes at external boundaries when needed.
 - Share suites across platforms. Use CI matrices for OS coverage and Bats tags for execution requirements.

@@ -56,6 +56,12 @@ setup_macos_shell() (
 
   env -i HOME="$SETUP_MACOS_ROOT/home" USER="$(id -un)" LOGNAME="$(id -un)" \
     PATH=/usr/bin:/bin:/usr/sbin:/sbin TMPDIR="$SETUP_MACOS_ROOT/tmp" \
+    XDG_DATA_HOME="$SETUP_MACOS_ROOT/home/.local/share" \
+    XDG_STATE_HOME="$SETUP_MACOS_ROOT/home/.local/state" \
+    XDG_CACHE_HOME="$SETUP_MACOS_ROOT/home/.cache" \
+    COREPACK_HOME="$SETUP_MACOS_ROOT/home/.cache/corepack" \
+    UV_PYTHON_INSTALL_DIR="$SETUP_MACOS_ROOT/home/.local/share/uv/python" \
+    PYTHONDONTWRITEBYTECODE=1 \
     LC_ALL=C TERM=dumb NONINTERACTIVE=1 \
     /bin/bash --noprofile --norc -euo pipefail -c "$@"
 )

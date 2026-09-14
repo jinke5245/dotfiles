@@ -89,6 +89,11 @@ if [[ -n ${HOMEBREW_PREFIX:-} && -d "$HOMEBREW_PREFIX/opt/zsh-completions/share/
   FPATH="$HOMEBREW_PREFIX/opt/zsh-completions/share/zsh-completions:$FPATH"
 fi
 
+# uv and uvx: reuse the formula's completion files before compinit.
+if [[ -n ${HOMEBREW_PREFIX:-} && -d "$HOMEBREW_PREFIX/opt/uv/share/zsh/site-functions" ]]; then
+  FPATH="$HOMEBREW_PREFIX/opt/uv/share/zsh/site-functions:$FPATH"
+fi
+
 # Keep the shell usable until oh-my-zsh has been installed.
 if [[ -r "$ZSH/oh-my-zsh.sh" ]]; then
   source "$ZSH/oh-my-zsh.sh"
@@ -132,6 +137,14 @@ fi
 # Personal additions
 #
 ################################################################################
+
+# fnm: initialize Node.js version switching and register completion after Oh My Zsh.
+if (( $+commands[fnm] )); then
+  eval "$(fnm env --use-on-cd --shell zsh)"
+  if (( $+functions[compdef] )); then
+    eval "$(fnm completions --shell zsh)"
+  fi
+fi
 
 if [[ -n ${HOMEBREW_PREFIX:-} ]]; then
   # autojump

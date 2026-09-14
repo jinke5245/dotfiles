@@ -112,7 +112,7 @@ EOF
 
   run -0 sandbox_zsh -lc 'source "$HOME/.zprofile"; source "$HOME/.zprofile"; print -r -- "$PATH"'
 
-  [ "$output" = "$SANDBOX_HOME/bin:$SANDBOX_HOME/.local/bin:$SANDBOX_ROOT/prefixes/intel/bin:$SANDBOX_ROOT/brew/bin:$SANDBOX_ROOT/brew/sbin:/usr/bin:/bin" ]
+  [ "$output" = "$SANDBOX_HOME/bin:$SANDBOX_HOME/.local/bin:$SANDBOX_HOME/go/bin:$SANDBOX_ROOT/prefixes/intel/bin:$SANDBOX_ROOT/brew/bin:$SANDBOX_ROOT/brew/sbin:/usr/bin:/bin" ]
 }
 
 @test "skips missing Oh My Zsh while loading the available plugins" {

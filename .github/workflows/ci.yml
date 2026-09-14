@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/setup@v2
+      - uses: pnpm/setup@v2.1.0
         with:
           runtime: node@22
           cache: true
@@ -34,7 +34,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/setup@v2
+      - uses: pnpm/setup@v2.1.0
         with:
           runtime: node@22
           cache: true
@@ -45,12 +45,15 @@ jobs:
           repository: ohmyzsh/ohmyzsh
           path: .cache/ohmyzsh
           persist-credentials: false
+      - run: npm install --prefix "$RUNNER_TEMP/corepack" --no-audit --no-fund corepack@0.36.0
+        working-directory: ${{ runner.temp }}
       - uses: ./.github/actions/setup-homebrew
       - run: brew bundle install --file=Brewfile --no-upgrade
       - uses: ./.github/actions/setup-chezmoi
       - run: pnpm test:e2e
         env:
           OMZ_SOURCE: ${{ github.workspace }}/.cache/ohmyzsh
+          COREPACK_SOURCE: ${{ runner.temp }}/corepack/node_modules/corepack
 
   test-setup:
     strategy:
@@ -60,7 +63,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/setup@v2
+      - uses: pnpm/setup@v2.1.0
         with:
           runtime: node@22
           cache: true

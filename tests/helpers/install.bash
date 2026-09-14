@@ -28,6 +28,16 @@ install_sandbox_create() {
   done
   cp "$SANDBOX_REPOSITORY/tests/fixtures/install/brew.bash" "$SANDBOX_HOME/.install-test/brew.bash"
 
+  for fixture in fnm npm corepack unexpected-command; do
+    cp "$SANDBOX_REPOSITORY/tests/fixtures/install/$fixture.bash" "$SANDBOX_HOME/.install-test/$fixture.bash"
+  done
+
+  # Catch accidental use of an unrelated runtime or package manager on PATH.
+  for fixture in fnm node npm corepack pnpm go uv; do
+    cp "$SANDBOX_HOME/.install-test/unexpected-command.bash" "$SANDBOX_ROOT/bin/$fixture"
+    chmod +x "$SANDBOX_ROOT/bin/$fixture"
+  done
+
   # Redirect fixed system prefixes only in the disposable repository copy.
   sed \
     -e "s|/opt/homebrew|$SANDBOX_ROOT/prefixes/apple|g" \
