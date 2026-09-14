@@ -6,19 +6,23 @@ See the root README for [development requirements](../README.md#requirements) an
 
 Group integration suites by responsibility: `chezmoi`, `install`, `git`, `ssh`, `zsh`, and `harness` (test isolation and safety). Keep descriptive filenames, and organize scenarios within each file. Tests run independently of directory order.
 
+- Integration tests own detailed configuration rules, failure cases, and external-script updates.
+- Offline E2E keeps one apply / startup / reapply flow, basic checks with real dependencies, and isolation checks.
+- Setup tests cover the documented first-time installation and one reapply on each platform.
+
 | File                                                                                               | Coverage                                                                                                                              |
 | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | [integration/chezmoi/chezmoi-init.bats](integration/chezmoi/chezmoi-init.bats)                     | Identity precedence, interactive and unattended inputs, local persistence, configuration preservation, and failures.                  |
-| [integration/chezmoi/chezmoi-layout.bats](integration/chezmoi/chezmoi-layout.bats)                 | Source discovery, target paths, deployment exclusions, repeatable application, and unrelated files.                                   |
+| [integration/chezmoi/chezmoi-layout.bats](integration/chezmoi/chezmoi-layout.bats)                 | Source discovery, actual Zsh / Git target paths, and repository deployment exclusions.                                                |
 | [integration/chezmoi/chezmoi-install.bats](integration/chezmoi/chezmoi-install.bats)               | Installation before configuration, failure propagation, repeatable application, and changes to external scripts.                      |
-| [integration/chezmoi/chezmoi-usage.bats](integration/chezmoi/chezmoi-usage.bats)                   | Default config discovery, unattended init / diff / apply, and pulled updates from a local Git remote.                                 |
+| [integration/chezmoi/chezmoi-usage.bats](integration/chezmoi/chezmoi-usage.bats)                   | Documented unattended init / diff / apply, default config discovery, and saved identity.                                              |
 | [integration/install/install-homebrew.bats](integration/install/install-homebrew.bats)             | macOS and Debian / Ubuntu installation, existing executables, and prerequisite, download, or installer failures.                      |
 | [integration/install/setup-homebrew-action.bats](integration/install/setup-homebrew-action.bats)   | Linux prerequisites, installation, existing executables, repeated setup, GitHub PATH updates, and failure propagation.                |
 | [integration/install/install-brewfile.bats](integration/install/install-brewfile.bats)             | Brewfile installation, executable selection after setup, explicit repository paths, repeated apply, and failures.                     |
 | [integration/install/install-node.bats](integration/install/install-node.bats)                     | Default LTS preparation, existing installations, Corepack location and fallback, environment isolation, repeated apply, and failures. |
 | [integration/install/install-oh-my-zsh.bats](integration/install/install-oh-my-zsh.bats)           | Official installer invocation, existing installations, configuration preservation, managed paths, and failures.                       |
-| [integration/git/git-defaults.bats](integration/git/git-defaults.bats)                             | Configuration discovery, main branch, Chinese filenames, fast-forward-only pulls, pruning, and LFS filter settings.                   |
-| [integration/git/git-local.bats](integration/git/git-local.bats)                                   | Required identity, local and repository overrides, legacy configuration precedence, preservation, and Git / chezmoi exclusions.       |
+| [integration/git/git-defaults.bats](integration/git/git-defaults.bats)                             | Shared configuration discovery, effective default values and their origins, and LFS filter settings.                                  |
+| [integration/git/git-local.bats](integration/git/git-local.bats)                                   | Effective local identity and origins, local / repository overrides, legacy precedence, preservation, and Git / chezmoi exclusions.    |
 | [integration/git/git-identity.bats](integration/git/git-identity.bats)                             | Missing fields, direct / included identity, comments, absent inputs, symlinks, and read, parse, or lock failures.                     |
 | [integration/git/git-install.bats](integration/git/git-install.bats)                               | Saved identity on apply, read-only preview, manual changes, argument quoting, and failure before SSH or managed files.                |
 | [integration/git/git-credentials.bats](integration/git/git-credentials.bats)                       | GitHub / Gist helper routing, inherited-helper resets, unrelated URLs, local overrides, and unavailable credentials.                  |
@@ -33,23 +37,23 @@ Group integration suites by responsibility: `chezmoi`, `install`, `git`, `ssh`, 
 | [integration/harness/flow-homebrew-safety.bats](integration/harness/flow-homebrew-safety.bats)     | Offline E2E substitutes read-only dependency checks and rejects other Homebrew operations.                                            |
 | [integration/harness/setup-container-safety.bats](integration/harness/setup-container-safety.bats) | Container setup reports missing Docker and stops before attempting installation.                                                      |
 | [integration/harness/setup-macos-safety.bats](integration/harness/setup-macos-safety.bats)         | macOS setup refuses local, act, and self-hosted execution before installation or removal.                                             |
-| [e2e/chezmoi-flow.bats](e2e/chezmoi-flow.bats)                                                     | Real Oh My Zsh, native shell startup, offline Node preparation, SSH keys, local preservation, repeat applies, and script changes.     |
-| [e2e/development-flow.bats](e2e/development-flow.bats)                                             | Basic Go / Node / Python execution, offline isolation, and preservation of tools and project environments.                            |
-| [e2e/git-flow.bats](e2e/git-flow.bats)                                                             | Login-shell Git discovery, local identity preservation, real LFS filtering, and project setup without changing global files.          |
-| [e2e/zsh-plugins.bats](e2e/zsh-plugins.bats)                                                       | Completion initialization, real interactive plugin behavior, and local key-binding overrides.                                         |
-| [e2e/setup.bats](e2e/setup.bats)                                                                   | Ubuntu setup, identity / SSH, language tools, pnpm and Python downloads, offline reuse, and repeat application.                       |
+| [e2e/chezmoi-flow.bats](e2e/chezmoi-flow.bats)                                                     | One apply / startup / reapply flow, local-state preservation, and Node / Corepack isolation.                                          |
+| [e2e/development-flow.bats](e2e/development-flow.bats)                                             | Language-tool paths and versions, the Node default, and the shell environment.                                                        |
+| [e2e/git-flow.bats](e2e/git-flow.bats)                                                             | Effective Git configuration and Git LFS availability.                                                                                 |
+| [e2e/zsh-plugins.bats](e2e/zsh-plugins.bats)                                                       | Plugin and completion loading and configured key bindings.                                                                            |
+| [e2e/setup.bats](e2e/setup.bats)                                                                   | Ubuntu setup, identity / SSH, language-tool availability, first-use pnpm, and repeat application.                                     |
 | [e2e/setup-macos.bats](e2e/setup-macos.bats)                                                       | The same setup and development checks on a guarded GitHub-hosted macOS runner, including missing Homebrew.                            |
 
 ## Running
 
 Run commands from the repository root:
 
-| Command           | Scope and requirements                                                                                                                           |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `pnpm test`       | Default unit and integration suites; runs offline.                                                                                               |
-| `pnpm ci:test`    | Local Linux CI jobs via act; requires a running Docker-compatible engine and network access. Skips when act is unavailable.                      |
-| `pnpm test:e2e`   | End-to-end suite; requires Homebrew on PATH, installed Brewfile packages, Git, and the prepared runtimes and Oh My Zsh checkout described below. |
-| `pnpm test:setup` | First-time setup suite; requires Docker and network access. Creates and removes a fresh `ubuntu:24.04` container.                                |
+| Command           | Scope and requirements                                                                                                                               |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm test`       | Default unit and integration suites; runs offline.                                                                                                   |
+| `pnpm ci:test`    | Local Linux CI jobs via act; requires a running Docker-compatible engine and network access. Skips when act is unavailable.                          |
+| `pnpm test:e2e`   | End-to-end suite; requires Homebrew on PATH, installed Brewfile packages, Git, and the prepared Node runtime and Oh My Zsh checkout described below. |
+| `pnpm test:setup` | First-time setup suite; requires Docker and network access. Creates and removes a fresh `ubuntu:24.04` container.                                    |
 
 `ci:test` runs these subcommands sequentially, stopping on failure. Each uses `ci:run` and the existing optional-command wrapper; missing act is skipped. `.actrc` selects the CI workflow and Ubuntu image, and removes failed act containers. Architecture follows the local Docker engine.
 
@@ -69,7 +73,7 @@ Both `test-e2e` and `test-setup` use macOS / Ubuntu matrices. E2E preparation in
 
 Bats tags keep the suites separate: `test:e2e` excludes `network`, `test:setup` selects `network,container`, and the CI-only `test:setup:macos` selects `network,macos`. Neither setup suite runs through `pnpm test` or `pnpm check`.
 
-Development E2E reuses the available `node` and `python3` executables. Optional `NODE_SOURCE` and `PYTHON_SOURCE` overrides accept absolute executable paths. CI reuses its prepared Node runtime; the suite needs only one Node version.
+Development E2E reuses the available `node` executable; an optional `NODE_SOURCE` override accepts an absolute executable path. CI reuses its prepared Node runtime. No separate Python interpreter is required.
 
 ```sh
 OMZ_SOURCE=/path/to/ohmyzsh pnpm test:e2e
@@ -87,7 +91,7 @@ Node installation tests substitute fnm, npm, and Corepack with strict command fi
 
 Offline E2E creates a temporary fnm installation, symlinking the runner's Node executable to preserve native library lookup and copying Corepack into it. All generated shims and writable state stay in the sandbox. Set `COREPACK_SOURCE` to a prepared Corepack package directory when Node does not bundle it; CI prepares this package under the runner's temporary directory. Missing prerequisites fail without installation. The shared apply and shell helpers disable npm and Corepack network access and give fnm a non-network mirror, so missing runtime preparation also fails without downloading software.
 
-Git integration tests use real Git with a temporary HOME, a test-owned system configuration, and an empty inherited environment. Git discovers the deployed `~/.config/git/config` through its normal XDG lookup. Repositories and remotes are local; network Git protocols and credential prompts are disabled. A substitute `gh` exercises the credential protocol with synthetic values. LFS filter execution with real dependencies belongs to E2E coverage.
+Git integration tests use real Git with a temporary HOME, a test-owned system configuration, and an empty inherited environment. Git discovers the deployed `~/.config/git/config` through its normal XDG lookup; default-setting checks read effective values and their origins. Repositories stay inside the sandbox, and network Git protocols and credential prompts are disabled. A substitute `gh` exercises the credential protocol with synthetic values. E2E checks the installed Git LFS executable and effective filter configuration.
 
 SSH integration tests require `ssh-keygen` and generate real keys only in temporary homes, with explicit key paths and an empty inherited environment. No SSH connections are made. Tests substitute only passphrase input through a test-owned askpass program; unavailable input fails immediately without opening a terminal prompt. Private-key contents are never printed or stored in fixtures.
 
@@ -95,25 +99,27 @@ Zsh platform cases use chezmoi data overrides and temporary installation paths. 
 
 Development integration cases use a strict fnm fixture for the two shell setup commands and real Zsh completion discovery. Runtime and package-manager fixtures reject startup-time invocations. E2E uses real fnm, uv, and uvx completion definitions and verifies that starting a shell with a missing project Node version does not install it.
 
-`development-flow.bats` checks basic execution with small dependency-free Go, Node, and Python projects. Node runs through the configured fnm default; the suite also checks the `go install` command path and a uv virtual environment. Runtime executables are read-only inputs; virtual environments, Go build caches, installed commands, and project files stay inside the sandbox. Shell helpers disable uv downloads, Go module lookup, and Go toolchain downloads. Repeated apply must preserve installed tools, the Node default, Python environments, project dependencies, and local overrides.
+`development-flow.bats` checks tool paths and version commands in the configured shell. Shared `helpers/development-flow.bash` supplies marker files under `~/go/bin`, project `node_modules`, and `.venv` directories for the combined apply flow and setup tests. These checks need no compilation, project execution, or Python environment creation; shell helpers keep downloads disabled.
 
 `chezmoi-flow.bats` runs the real Oh My Zsh installer and Git fetch against a local snapshot of the supplied checkout's committed files. It installs only inside a temporary home, disables update checks, and blocks remote Git protocols and unexpected installer downloads.
 
+One scenario covers first apply, shell startup with local overrides, and repeated apply. It checks Git identity initialization, then snapshots manual Git edits, Zsh configuration, Oh My Zsh customization, and SSH keys. Reapplication must preserve their contents and timestamps, development markers, and Node's default and installed-version list. Detailed key validation and script-update rules remain in integration tests.
+
 This flow suite requires existing Homebrew and installed Brewfile packages. A command adapter forwards prefix and environment queries to the real Homebrew, replaces Bundle installation with `brew bundle check --no-upgrade`, and rejects other operations. It checks Homebrew's prepared Ruby and Bundler files before invoking Bundle, preventing automatic runtime installation or upgrades. Missing prerequisites fail the test without installation. Native platform data and rendered files remain unchanged. The checkout and actual shell startup files are not modified or sourced.
 
-`zsh-plugins.bats` reuses that isolation and dependency adapter. The shared `helpers/zsh-pty.zsh` driver uses Zsh's built-in `zpty` module to send real keystrokes and read terminal output. A test-only redraw hook records the editing buffer and highlights without invoking plugin internals. Waits are bounded, the terminal is closed after each scenario, and all history, completion caches, and autojump data stay inside the temporary home and state directories.
+`zsh-plugins.bats` starts the configured shell with real plugins in a temporary HOME, checks plugin and completion availability, and reads the configured key bindings. Local overrides are exercised by the combined apply flow.
 
 `setup.bats` starts with no chezmoi, Homebrew, or Oh My Zsh in a fresh Ubuntu container. Root only provisions a test account with sudo access; that ordinary user follows the README prerequisites and installation steps. Supplied answers initialize `[data.user]` at the default config path before preview and apply. Repeat init needs no answers; init and preview must not install dependencies or create Git identity / SSH files. `NONINTERACTIVE=1` answers Homebrew's unattended-installation prompts.
 
-The first apply creates local Git identity and SSH keys from the saved inputs. Manual Git identity edits, an unrelated setting, and a comment are added before reapplying; local Git changes, saved inputs, SSH keys, and the pre-existing `.zshrc.local` must survive unchanged. After both applies, shared assertions check Homebrew Git tooling and login startup. Brewfile dependencies must be satisfied, and installed package versions must remain unchanged after reapplication.
+The first apply creates local Git identity and SSH keys from the saved inputs, then checks shell startup and installed tools. Manual Git identity edits, an unrelated setting, and a comment are added before reapplying; local Git changes, saved inputs, SSH keys, and the pre-existing `.zshrc.local` must survive unchanged. Final checks read effective Git configuration and compare development state. Brewfile dependencies must be satisfied, and installed package versions must remain unchanged after reapplication.
 
-Both setup platforms use `helpers/setup-development.bash` to verify Homebrew Go / fnm / uv, the initial LTS Node, and Corepack's pnpm shim. Before project use, the isolated Corepack cache and uv-managed Python directory must be absent. A small Node project copies the repository's exact `packageManager` declaration and downloads that pnpm version on first use. A Python project explicitly requests uv-managed Python 3.13; this test choice does not change the shared setup defaults.
+Both setup platforms use `helpers/setup-development.bash` to verify tool paths, the initial LTS Node, and Corepack's pnpm shim. Before first use, the isolated Corepack cache and uv-managed Python directory must be absent. A temporary `package.json` copies the repository's `packageManager` declaration; one `pnpm --version` invocation verifies that Corepack can fetch and start the declared version.
 
-Fresh shells then run the projects with Node, pnpm, Python, and Go downloads disabled. After reapplying, versions, Node's default, the installed Go command, project files, and the Python environment must remain unchanged and usable offline. HOME, XDG state, Corepack cache, and uv's Python directory stay inside the disposable environment. The full setup suites permit real downloads; default and offline E2E suites remain separate.
+Checks in fresh shells keep downloads disabled and compare tool versions, Node's default, and the shared marker files across reapplication. Python remains uninstalled by uv. HOME, XDG state, and Corepack cache stay inside the disposable environment. The full setup suites permit dependency downloads; default and offline E2E suites remain separate.
 
-Both setup platforms and the shell E2E flow use `helpers/ssh-flow.bash` to verify matching, unencrypted Ed25519 keys, the expected comment, and directory / key permissions. The caller supplies the expected email when initialization data is present; otherwise, the helper checks the default comment. Preview must not generate keys; repeated apply preserves their contents and modification times. Test keys and snapshots stay inside isolated homes or test directories.
+Both setup platforms use `helpers/ssh-flow.bash` once to verify matching, unencrypted Ed25519 keys, the supplied comment, and directory / key permissions after installation. Preview must not generate keys; repeated apply uses snapshots to verify preservation. Test keys and snapshots stay inside isolated homes or test directories.
 
-`git-flow.bats` uses the same isolated dependency adapter as the shell E2E suites. Both E2E and first-time setup source `helpers/git-flow.bash` inside a login shell to verify real LFS staging, pointer format, commit identity, and binary checkout. The round-trip uses shared filters before `git lfs install --local` verifies project setup and hook creation. All LFS objects stay in temporary repositories without remotes; no authentication is required.
+`git-flow.bats` uses the same isolated dependency adapter as the shell E2E suites. Both E2E and first-time setup source `helpers/git-flow.bash` inside a login shell to check effective Git settings, the Homebrew Git LFS executable, its version command, and the four shared LFS filter declarations. These checks are read-only and need no project repository or authentication.
 
 Repository copies use tracked files and nonignored untracked files from the current Git checkout, preserving uncommitted contents. Ignored local files, Git metadata, dependencies, and caches are excluded. A temporary local Git remote serves this snapshot under the documented clone URL; dependency downloads remain real. The Ubuntu setup container has no host directories, credentials, or Docker socket mounted, and teardown removes it on success or failure.
 

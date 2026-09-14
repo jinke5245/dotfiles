@@ -6,7 +6,6 @@
 load '../helpers/sandbox.bash'
 load '../helpers/zsh.bash'
 load '../helpers/flow.bash'
-load '../helpers/development-flow.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0
@@ -15,108 +14,21 @@ setup_file() {
 
 setup() {
   flow_sandbox_create
-  development_flow_prepare
   sandbox_chezmoi apply
 }
 
-@test "Go runs a local module and preserves an installed command across apply" {
+@test "login shells expose Homebrew language tools and the prepared Node default" {
   run -0 sandbox_zsh -lic '
-    cd "$HOME/projects/go" &&
-    [[ $(go env GOPATH) = "$HOME/go" ]] &&
-    go run . && go install . && dotfiles-smoke
+    for tool in go fnm uv uvx; do
+      [[ $(command -v "$tool") = "$HOMEBREW_PREFIX/bin/$tool" ]] || exit 1
+    done
+    for tool in node corepack pnpm; do
+      [[ $(command -v "$tool") = "$FNM_MULTISHELL_PATH/bin/$tool" ]] || exit 1
+    done
+
+    [[ ":$PATH:" = *":$HOME/go/bin:"* ]] &&
+    [[ -z ${GOROOT:-} && -z ${GOPATH:-} && -z ${VIRTUAL_ENV:-} ]] &&
+    [[ $(node --version) = $(fnm default) ]] &&
+    go version && fnm --version && uv --version && uvx --version && corepack --version
   '
-
-  [ "$output" = "$(printf 'go:ok\ngo:ok')" ]
-  cp -p "$SANDBOX_HOME/go/bin/dotfiles-smoke" "$SANDBOX_ROOT/go-tool.before"
-
-  run -0 sandbox_chezmoi apply
-  cmp "$SANDBOX_HOME/go/bin/dotfiles-smoke" "$SANDBOX_ROOT/go-tool.before"
-  [ ! "$SANDBOX_HOME/go/bin/dotfiles-smoke" -nt "$SANDBOX_ROOT/go-tool.before" ]
-
-  run -0 sandbox_zsh -lic 'dotfiles-smoke'
-  [ "$output" = go:ok ]
-}
-
-@test "Node executes JavaScript from the prepared fnm default" {
-  run -0 sandbox_zsh -lic '
-    [[ $(node --version) = "$1" && $(fnm current) = "$1" ]] &&
-    node "$HOME/projects/node/main.cjs"
-  ' _ "$DEVELOPMENT_NODE_VERSION"
-
-  [ "$output" = node:ok ]
-}
-
-@test "uv creates and runs a Python environment without activating it in the shell" {
-  run -0 sandbox_zsh -lic '
-    cd "$HOME/projects/python" &&
-    uv venv --quiet --python "$1" &&
-    uv run --no-project --python .venv/bin/python main.py &&
-    [[ -z ${VIRTUAL_ENV:-} ]]
-  ' _ "$DEVELOPMENT_PYTHON_SOURCE"
-
-  [ "$output" = python:ok ]
-  [ -f "$DEVELOPMENT_PROJECTS/python/.venv/pyvenv.cfg" ]
-}
-
-@test "offline development tools refuse unprepared Go modules and Python versions" {
-  run ! sandbox_zsh -lic 'go list -m example.invalid/unavailable@v1.0.0'
-
-  [[ "$output" == *'GOPROXY=off'* ]]
-
-  run ! sandbox_zsh -lic 'uv venv --python 99.0 "$HOME/unavailable-python"'
-
-  # uv versions describe a missing interpreter differently across platforms.
-  [[ "$output" == *'99.0'* ]]
-  [ ! -e "$SANDBOX_HOME/unavailable-python" ]
-}
-
-@test "repeated apply preserves the Node installation, project environments, and local overrides" {
-  run -0 sandbox_zsh -lic 'uv venv --quiet --python "$1" "$HOME/projects/python/.venv"' \
-    _ "$DEVELOPMENT_PYTHON_SOURCE"
-
-  # A project-local dependency exercises file preservation without a registry.
-  mkdir -p "$DEVELOPMENT_PROJECTS/node/node_modules/local-fixture"
-  printf 'module.exports = "local:ok";\n' > "$DEVELOPMENT_PROJECTS/node/node_modules/local-fixture/index.cjs"
-  printf 'export DEVELOPMENT_LOCAL=preserved\n' > "$SANDBOX_HOME/.zshrc.local"
-
-  local file snapshot=0
-  local files=(
-    .zshrc.local
-    projects/node/.node-version
-    projects/node/node_modules/local-fixture/index.cjs
-    projects/python/.venv/pyvenv.cfg
-  )
-  for file in "${files[@]}"; do
-    cp -p "$SANDBOX_HOME/$file" "$SANDBOX_ROOT/preserved-$snapshot"
-    snapshot=$((snapshot + 1))
-  done
-
-  run -0 sandbox_zsh -lic 'fnm default && fnm list'
-  local versions_before="$output"
-  local python_before
-  python_before="$(readlink "$DEVELOPMENT_PROJECTS/python/.venv/bin/python")"
-
-  run -0 sandbox_chezmoi apply
-
-  snapshot=0
-  for file in "${files[@]}"; do
-    cmp "$SANDBOX_HOME/$file" "$SANDBOX_ROOT/preserved-$snapshot"
-    [ ! "$SANDBOX_HOME/$file" -nt "$SANDBOX_ROOT/preserved-$snapshot" ]
-    snapshot=$((snapshot + 1))
-  done
-  [ "$(readlink "$DEVELOPMENT_PROJECTS/python/.venv/bin/python")" = "$python_before" ]
-
-  run -0 sandbox_zsh -lic 'fnm default && fnm list'
-  [ "$output" = "$versions_before" ]
-
-  run -0 sandbox_zsh -lic '
-    [[ $DEVELOPMENT_LOCAL = preserved ]] &&
-    cd "$HOME/projects/node" > /dev/null &&
-    [[ $(node --version) = "$1" ]] &&
-    node -p "require(process.argv[1])" "$PWD/node_modules/local-fixture/index.cjs" &&
-    cd "$HOME/projects/python" > /dev/null &&
-    uv run --no-project --python .venv/bin/python main.py
-  ' _ "$DEVELOPMENT_NODE_VERSION"
-
-  [ "$output" = "$(printf 'local:ok\npython:ok')" ]
 }

@@ -66,13 +66,3 @@ git_fixture_included_identity() {
   sandbox_git config --file "$SANDBOX_HOME/.config/git/identity.config" user.name 'Included Name'
   sandbox_git config --file "$SANDBOX_HOME/.config/git/identity.config" user.email included@example.invalid
 }
-
-git_fixture_remote() {
-  git_fixture_identity
-  sandbox_git -C "$SANDBOX_GIT_WORKTREE" commit --quiet --allow-empty -m 'Initial commit'
-  sandbox_git clone --quiet --bare "$SANDBOX_GIT_WORKTREE" "$SANDBOX_ROOT/remote.git"
-  sandbox_git -C "$SANDBOX_GIT_WORKTREE" remote add origin "$SANDBOX_ROOT/remote.git"
-  sandbox_git -C "$SANDBOX_GIT_WORKTREE" fetch --quiet
-  sandbox_git -C "$SANDBOX_GIT_WORKTREE" branch --quiet --set-upstream-to=origin/main
-  sandbox_git clone --quiet "$SANDBOX_ROOT/remote.git" "$SANDBOX_ROOT/peer"
-}

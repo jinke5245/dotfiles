@@ -11,26 +11,14 @@ setup() {
   git_sandbox_create
 }
 
-@test "commits require both an explicitly configured name and email" {
-  local missing
-  for missing in user.name user.email; do
-    git_fixture_identity
-    sandbox_git config --file "$SANDBOX_GIT_LOCAL" --unset "$missing"
-
-    run -128 sandbox_git -C "$SANDBOX_GIT_WORKTREE" commit --quiet --allow-empty -m 'Missing identity'
-
-    [[ "$output" == *'auto-detection is disabled'* ]]
-    run -128 sandbox_git -C "$SANDBOX_GIT_WORKTREE" rev-parse --verify HEAD
-  done
-}
-
-@test "local identity is used for the author and committer" {
+@test "Git reads the device identity from local configuration" {
   git_fixture_identity
 
-  run -0 sandbox_git -C "$SANDBOX_GIT_WORKTREE" commit --quiet --allow-empty -m 'Local identity'
+  run -0 sandbox_git config --show-origin --get user.name
+  [ "$output" = "$(printf 'file:%s\tDotfiles test' "$SANDBOX_GIT_LOCAL")" ]
 
-  run -0 sandbox_git -C "$SANDBOX_GIT_WORKTREE" log -1 --format='%an <%ae>%n%cn <%ce>'
-  [ "$output" = "$(printf 'Dotfiles test <test@example.invalid>\nDotfiles test <test@example.invalid>')" ]
+  run -0 sandbox_git config --show-origin --get user.email
+  [ "$output" = "$(printf 'file:%s\ttest@example.invalid' "$SANDBOX_GIT_LOCAL")" ]
 }
 
 @test "local overrides load after shared defaults and repository settings take precedence" {
@@ -47,9 +35,11 @@ setup() {
   run -0 sandbox_git -C "$SANDBOX_GIT_WORKTREE" config --get core.quotePath
   [ "$output" = false ]
 
-  run -0 sandbox_git -C "$SANDBOX_GIT_WORKTREE" commit --quiet --allow-empty -m 'Project identity'
-  run -0 sandbox_git -C "$SANDBOX_GIT_WORKTREE" log -1 --format='%an <%ae>'
-  [ "$output" = 'Project test <project@example.invalid>' ]
+  run -0 sandbox_git -C "$SANDBOX_GIT_WORKTREE" config --show-origin --get user.name
+  [ "$output" = "$(printf 'file:.git/config\tProject test')" ]
+
+  run -0 sandbox_git -C "$SANDBOX_GIT_WORKTREE" config --show-origin --get user.email
+  [ "$output" = "$(printf 'file:.git/config\tproject@example.invalid')" ]
 }
 
 @test "an existing legacy gitconfig retains its normal precedence and is preserved" {

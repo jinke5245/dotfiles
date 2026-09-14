@@ -6,6 +6,7 @@
 load '../helpers/sandbox.bash'
 load '../helpers/zsh.bash'
 load '../helpers/flow.bash'
+load '../helpers/development-flow.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0
@@ -16,111 +17,93 @@ setup() {
   flow_sandbox_create
 }
 
-@test "a fresh apply installs real Oh My Zsh and starts the configured shells" {
+@test "apply starts the configured shell and preserves local state on reapplication" {
   [ ! -e "$SANDBOX_HOME/.oh-my-zsh" ]
   [ ! -e "$SANDBOX_HOME/.ssh" ]
+  [ ! -e "$SANDBOX_HOME/.config/git/config.local" ]
+
+  cp "$SANDBOX_REPOSITORY/tests/fixtures/zsh/local.zsh" "$SANDBOX_HOME/.zshrc.local"
+  development_flow_prepare "$SANDBOX_HOME" "$SANDBOX_ROOT/development.before"
 
   run -0 sandbox_chezmoi apply
 
   [ -f "$SANDBOX_HOME/.oh-my-zsh/oh-my-zsh.sh" ]
-  [ ! -e "$SANDBOX_HOME/.zshrc.local" ]
-  cmp "$SANDBOX_REPOSITORY/home/dot_zshrc" "$SANDBOX_HOME/.zshrc"
+  [ -f "$SANDBOX_HOME/.ssh/id_ed25519" ]
+  [ -f "$SANDBOX_HOME/.ssh/id_ed25519.pub" ]
+  cmp "$SANDBOX_REPOSITORY/tests/fixtures/zsh/local.zsh" "$SANDBOX_HOME/.zshrc.local"
 
-  run -0 sandbox_zsh -lc '
-    source "$1/tests/helpers/ssh-flow.bash"
-    ssh_flow_check test@example.invalid
-  ' _ "$SANDBOX_REPOSITORY"
-  [ -z "$output" ]
-
-  local startup_file
-  for startup_file in .zprofile .zshrc; do
-    run -0 sandbox_zsh -n "$SANDBOX_HOME/$startup_file"
-    [ -z "$output" ]
-  done
-
-  # Use native chezmoi platform data and the real, preinstalled Homebrew.
-  run -0 sandbox_zsh -lc '
+  # Start the deployed configuration with real dependencies and local overrides.
+  run -0 sandbox_zsh -lic '
     [[ $HOMEBREW_PREFIX = "$1" ]] &&
-    [[ $path[1] = "$HOME/bin" && $path[2] = "$HOME/.local/bin" ]]
+    [[ $ZSH_THEME = robbyrussell ]] &&
+    [[ ${aliases[gst]} = "git status --short" ]] &&
+    [[ $EDITOR = nvim ]] &&
+    [[ $(project) = "$HOME/projects" ]] &&
+    [[ $(bindkey "^[[A") = *beginning-of-line ]] &&
+    (( $+functions[compdef] )) &&
+    [[ $(git config --get user.name) = "Dotfiles test" ]] &&
+    [[ $(git config --get user.email) = test@example.invalid ]]
   ' _ "$FLOW_BREW_PREFIX"
   [ -z "$output" ]
 
-  local mode
-  for mode in -lic -ic; do
-    run -0 sandbox_zsh "$mode" '
-      [[ $path[1] = "$FNM_MULTISHELL_PATH/bin" ]] &&
-      [[ $(command -v node) = "$FNM_MULTISHELL_PATH/bin/node" ]] &&
-      [[ $ZSH_THEME = robbyrussell ]] &&
-      [[ $PROMPT = *git_prompt_info* ]] &&
-      [[ ${aliases[gst]} = "git status" ]] &&
-      [[ $HISTFILE = "$HOME/.zsh_history" ]] &&
-      (( $+functions[compdef] ))
-    '
-    [ -z "$output" ]
-  done
-}
-
-@test "first and repeated apply preserve local configuration and the installed framework" {
-  cp "$SANDBOX_REPOSITORY/tests/fixtures/zsh/local.zsh" "$SANDBOX_HOME/.zshrc.local"
-  sandbox_chezmoi apply
-  cmp "$SANDBOX_REPOSITORY/tests/fixtures/zsh/local.zsh" "$SANDBOX_HOME/.zshrc.local"
+  # Keep manual identity edits, framework customization, and development state.
+  run -0 sandbox_zsh -lc '
+    git config --file "$HOME/.config/git/config.local" user.name "Manual Name" &&
+    git config --file "$HOME/.config/git/config.local" user.email manual@example.invalid
+  '
+  printf 'keep\n' > "$SANDBOX_HOME/.oh-my-zsh/custom/personal-note"
 
   local file before
-  for file in .zprofile .zshrc .zshrc.local .oh-my-zsh/oh-my-zsh.sh \
-    .ssh/id_ed25519 .ssh/id_ed25519.pub; do
-    cp -p "$SANDBOX_HOME/$file" "$SANDBOX_ROOT/$(basename "$file").before"
+  local files=(
+    .zprofile
+    .zshrc
+    .zshrc.local
+    .oh-my-zsh/oh-my-zsh.sh
+    .oh-my-zsh/custom/personal-note
+    .config/git/config
+    .config/git/config.local
+    .gitconfig
+    .ssh/id_ed25519
+    .ssh/id_ed25519.pub
+  )
+  for file in "${files[@]}"; do
+    before="$SANDBOX_ROOT/before/$file"
+    mkdir -p "$(dirname "$before")"
+    cp -p "$SANDBOX_HOME/$file" "$before"
   done
-  printf 'keep\n' > "$SANDBOX_HOME/.oh-my-zsh/custom/personal-note"
+
+  run -0 sandbox_zsh -lic 'fnm default && fnm list'
+  local versions_before="$output"
 
   # Any attempt to download an installer again must now fail.
   touch "$SANDBOX_HOME/.test-upstream/no-download"
 
   run -0 sandbox_chezmoi apply
 
-  for file in .zprofile .zshrc .zshrc.local .oh-my-zsh/oh-my-zsh.sh \
-    .ssh/id_ed25519 .ssh/id_ed25519.pub; do
-    before="$SANDBOX_ROOT/$(basename "$file").before"
+  for file in "${files[@]}"; do
+    before="$SANDBOX_ROOT/before/$file"
     cmp "$SANDBOX_HOME/$file" "$before"
     [ ! "$SANDBOX_HOME/$file" -nt "$before" ]
     [ ! "$SANDBOX_HOME/$file" -ot "$before" ]
   done
-  [ "$(cat "$SANDBOX_HOME/.oh-my-zsh/custom/personal-note")" = keep ]
+  development_flow_check "$SANDBOX_HOME" "$SANDBOX_ROOT/development.before"
 
-  run -0 sandbox_zsh -lc '
-    source "$1/tests/helpers/ssh-flow.bash"
-    ssh_flow_check test@example.invalid
-  ' _ "$SANDBOX_REPOSITORY"
-  [ -z "$output" ]
+  run -0 sandbox_zsh -lic '
+    [[ $(git config --get user.name) = "Manual Name" ]] &&
+    [[ $(git config --get user.email) = manual@example.invalid ]] &&
+    [[ $EDITOR = nvim ]] &&
+    fnm default && fnm list
+  '
+  [ "$output" = "$versions_before" ]
 
   run -0 sandbox_chezmoi diff --exclude scripts
   [ -z "$output" ]
-}
-
-@test "the next apply runs changed external scripts without changing the adapter" {
-  sandbox_chezmoi apply
-
-  # Change a function and the entry point only in the disposable repository.
-  cat >> "$SANDBOX_REPOSITORY/scripts/lib/oh-my-zsh.sh" << 'EOF'
-install_oh_my_zsh() {
-  printf 'library\n' >> "$HOME/script-runs"
-  test -f "$HOME/.oh-my-zsh/oh-my-zsh.sh"
-}
-EOF
-
-  cat >> "$SANDBOX_REPOSITORY/scripts/install.sh" << 'EOF'
-printf 'entry\n' >> "$HOME/script-runs"
-EOF
-
-  run -0 sandbox_chezmoi apply
-
-  [ "$(cat "$SANDBOX_HOME/script-runs")" = "$(printf 'library\nentry')" ]
 }
 
 @test "offline apply enables pnpm only inside the isolated Node installation" {
   cp -p "$NODE_FLOW_RUNTIME/bin/node" "$SANDBOX_ROOT/node.before"
   cp -p "$NODE_FLOW_RUNTIME/lib/node_modules/corepack/dist/corepack.js" "$SANDBOX_ROOT/corepack.before"
 
-  run -0 sandbox_chezmoi apply
   run -0 sandbox_chezmoi apply
 
   [ -x "$NODE_FLOW_RUNTIME/bin/pnpm" ]

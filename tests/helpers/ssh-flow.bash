@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-# Shared assertions for newly initialized keys in an isolated home.
+# Check newly initialized keys once during isolated first-time setup.
 ssh_flow_check() (
   set -eu
 
-  local expected_comment="${1:-$(id -un)@$(hostname)}"
+  local expected_comment="$1"
   local private_key public_key derived permissions
   private_key="$HOME/.ssh/id_ed25519"
   public_key="$private_key.pub"
