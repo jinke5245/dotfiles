@@ -1,16 +1,30 @@
 #!/usr/bin/env bash
 
-# Prepared interpreters are read-only inputs. Projects, shims, and tool state
-# belong to the current test; the offline suite never downloads a runtime.
-# shellcheck disable=SC2034
+# Markers stand in for user-owned tools and environments; no builds or downloads.
+DEVELOPMENT_STATE_FILES=(
+  go/bin/dotfiles-test
+  projects/node/node_modules/.dotfiles-test
+  projects/python/.venv/.dotfiles-test
+)
 
-development_flow_prepare() {
-  DEVELOPMENT_NODE_VERSION="$(env -i "$NODE_FLOW_RUNTIME/bin/node" --version)" || return
+development_flow_prepare() (
+  set -eu
 
-  DEVELOPMENT_PYTHON_SOURCE="$(env -i HOME="$SANDBOX_HOME" PATH="$PATH" \
-    "${PYTHON_SOURCE:-python3}" -I -c 'import sys; print(sys.executable)')" || return
+  local test_home="$1" snapshot="$2" file
+  for file in "${DEVELOPMENT_STATE_FILES[@]}"; do
+    mkdir -p "$test_home/$(dirname "$file")" "$snapshot/$(dirname "$file")"
+    printf 'Preserve local development state.\n' > "$test_home/$file"
+    cp -p "$test_home/$file" "$snapshot/$file"
+  done
+)
 
-  DEVELOPMENT_PROJECTS="$SANDBOX_HOME/projects"
-  cp -R "$SANDBOX_REPOSITORY/tests/fixtures/development" "$DEVELOPMENT_PROJECTS"
-  printf '%s\n' "$DEVELOPMENT_NODE_VERSION" > "$DEVELOPMENT_PROJECTS/node/.node-version"
-}
+development_flow_check() (
+  set -eu
+
+  local test_home="$1" snapshot="$2" file
+  for file in "${DEVELOPMENT_STATE_FILES[@]}"; do
+    cmp "$test_home/$file" "$snapshot/$file"
+    test ! "$test_home/$file" -nt "$snapshot/$file"
+    test ! "$test_home/$file" -ot "$snapshot/$file"
+  done
+)

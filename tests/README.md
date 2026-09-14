@@ -34,22 +34,22 @@ Group integration suites by responsibility: `chezmoi`, `install`, `git`, `ssh`, 
 | [integration/harness/setup-container-safety.bats](integration/harness/setup-container-safety.bats) | Container setup reports missing Docker and stops before attempting installation.                                                      |
 | [integration/harness/setup-macos-safety.bats](integration/harness/setup-macos-safety.bats)         | macOS setup refuses local, act, and self-hosted execution before installation or removal.                                             |
 | [e2e/chezmoi-flow.bats](e2e/chezmoi-flow.bats)                                                     | Real Oh My Zsh, native shell startup, offline Node preparation, SSH keys, local preservation, repeat applies, and script changes.     |
-| [e2e/development-flow.bats](e2e/development-flow.bats)                                             | Basic Go / Node / Python execution, offline isolation, and preservation of tools and project environments.                            |
+| [e2e/development-flow.bats](e2e/development-flow.bats)                                             | Language-tool availability and paths, the Node default, and preservation of development files.                                        |
 | [e2e/git-flow.bats](e2e/git-flow.bats)                                                             | Login-shell Git discovery, local identity preservation, real LFS filtering, and project setup without changing global files.          |
 | [e2e/zsh-plugins.bats](e2e/zsh-plugins.bats)                                                       | Plugin and completion loading, configured key bindings, and machine-local overrides.                                                  |
-| [e2e/setup.bats](e2e/setup.bats)                                                                   | Ubuntu setup, identity / SSH, language tools, pnpm and Python downloads, offline reuse, and repeat application.                       |
+| [e2e/setup.bats](e2e/setup.bats)                                                                   | Ubuntu setup, identity / SSH, language-tool availability, first-use pnpm, and repeat application.                                     |
 | [e2e/setup-macos.bats](e2e/setup-macos.bats)                                                       | The same setup and development checks on a guarded GitHub-hosted macOS runner, including missing Homebrew.                            |
 
 ## Running
 
 Run commands from the repository root:
 
-| Command           | Scope and requirements                                                                                                                           |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `pnpm test`       | Default unit and integration suites; runs offline.                                                                                               |
-| `pnpm ci:test`    | Local Linux CI jobs via act; requires a running Docker-compatible engine and network access. Skips when act is unavailable.                      |
-| `pnpm test:e2e`   | End-to-end suite; requires Homebrew on PATH, installed Brewfile packages, Git, and the prepared runtimes and Oh My Zsh checkout described below. |
-| `pnpm test:setup` | First-time setup suite; requires Docker and network access. Creates and removes a fresh `ubuntu:24.04` container.                                |
+| Command           | Scope and requirements                                                                                                                               |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm test`       | Default unit and integration suites; runs offline.                                                                                                   |
+| `pnpm ci:test`    | Local Linux CI jobs via act; requires a running Docker-compatible engine and network access. Skips when act is unavailable.                          |
+| `pnpm test:e2e`   | End-to-end suite; requires Homebrew on PATH, installed Brewfile packages, Git, and the prepared Node runtime and Oh My Zsh checkout described below. |
+| `pnpm test:setup` | First-time setup suite; requires Docker and network access. Creates and removes a fresh `ubuntu:24.04` container.                                    |
 
 `ci:test` runs these subcommands sequentially, stopping on failure. Each uses `ci:run` and the existing optional-command wrapper; missing act is skipped. `.actrc` selects the CI workflow and Ubuntu image, and removes failed act containers. Architecture follows the local Docker engine.
 
@@ -69,7 +69,7 @@ Both `test-e2e` and `test-setup` use macOS / Ubuntu matrices. E2E preparation in
 
 Bats tags keep the suites separate: `test:e2e` excludes `network`, `test:setup` selects `network,container`, and the CI-only `test:setup:macos` selects `network,macos`. Neither setup suite runs through `pnpm test` or `pnpm check`.
 
-Development E2E reuses the available `node` and `python3` executables. Optional `NODE_SOURCE` and `PYTHON_SOURCE` overrides accept absolute executable paths. CI reuses its prepared Node runtime; the suite needs only one Node version.
+Development E2E reuses the available `node` executable; an optional `NODE_SOURCE` override accepts an absolute executable path. CI reuses its prepared Node runtime. No separate Python interpreter is required.
 
 ```sh
 OMZ_SOURCE=/path/to/ohmyzsh pnpm test:e2e
@@ -95,7 +95,7 @@ Zsh platform cases use chezmoi data overrides and temporary installation paths. 
 
 Development integration cases use a strict fnm fixture for the two shell setup commands and real Zsh completion discovery. Runtime and package-manager fixtures reject startup-time invocations. E2E uses real fnm, uv, and uvx completion definitions and verifies that starting a shell with a missing project Node version does not install it.
 
-`development-flow.bats` checks basic execution with small dependency-free Go, Node, and Python projects. Node runs through the configured fnm default; the suite also checks the `go install` command path and a uv virtual environment. Runtime executables are read-only inputs; virtual environments, Go build caches, installed commands, and project files stay inside the sandbox. Shell helpers disable uv downloads, Go module lookup, and Go toolchain downloads. Repeated apply must preserve installed tools, the Node default, Python environments, project dependencies, and local overrides.
+`development-flow.bats` checks tool paths and version commands in the configured shell, then verifies that repeated apply preserves the Node default and installed-version list. Shared `helpers/development-flow.bash` uses marker files under `~/go/bin`, project `node_modules`, and `.venv` directories to check content and timestamp preservation. These checks need no compilation, project execution, or Python environment creation; shell helpers keep downloads disabled.
 
 `chezmoi-flow.bats` runs the real Oh My Zsh installer and Git fetch against a local snapshot of the supplied checkout's committed files. It installs only inside a temporary home, disables update checks, and blocks remote Git protocols and unexpected installer downloads.
 
@@ -107,9 +107,9 @@ This flow suite requires existing Homebrew and installed Brewfile packages. A co
 
 The first apply creates local Git identity and SSH keys from the saved inputs. Manual Git identity edits, an unrelated setting, and a comment are added before reapplying; local Git changes, saved inputs, SSH keys, and the pre-existing `.zshrc.local` must survive unchanged. After both applies, shared assertions check Homebrew Git tooling and login startup. Brewfile dependencies must be satisfied, and installed package versions must remain unchanged after reapplication.
 
-Both setup platforms use `helpers/setup-development.bash` to verify Homebrew Go / fnm / uv, the initial LTS Node, and Corepack's pnpm shim. Before project use, the isolated Corepack cache and uv-managed Python directory must be absent. A small Node project copies the repository's exact `packageManager` declaration and downloads that pnpm version on first use. A Python project explicitly requests uv-managed Python 3.13; this test choice does not change the shared setup defaults.
+Both setup platforms use `helpers/setup-development.bash` to verify tool paths, the initial LTS Node, and Corepack's pnpm shim. Before first use, the isolated Corepack cache and uv-managed Python directory must be absent. A temporary `package.json` copies the repository's `packageManager` declaration; one `pnpm --version` invocation verifies that Corepack can fetch and start the declared version.
 
-Fresh shells then run the projects with Node, pnpm, Python, and Go downloads disabled. After reapplying, versions, Node's default, the installed Go command, project files, and the Python environment must remain unchanged and usable offline. HOME, XDG state, Corepack cache, and uv's Python directory stay inside the disposable environment. The full setup suites permit real downloads; default and offline E2E suites remain separate.
+Checks in fresh shells keep downloads disabled and compare tool versions, Node's default, and the shared marker files across reapplication. Python remains uninstalled by uv. HOME, XDG state, and Corepack cache stay inside the disposable environment. The full setup suites permit dependency downloads; default and offline E2E suites remain separate.
 
 Both setup platforms and the shell E2E flow use `helpers/ssh-flow.bash` to verify matching, unencrypted Ed25519 keys, the expected comment, and directory / key permissions. The caller supplies the expected email when initialization data is present; otherwise, the helper checks the default comment. Preview must not generate keys; repeated apply preserves their contents and modification times. Test keys and snapshots stay inside isolated homes or test directories.
 

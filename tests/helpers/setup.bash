@@ -94,18 +94,20 @@ setup_check_ssh_keys() {
 
 setup_prepare_development() {
   run -0 setup_shell 'exec zsh -lic "$1" _ "$2"' _ '
+    source "$1/tests/helpers/development-flow.bash"
     source "$1/tests/helpers/setup-development.bash"
     setup_development_prepare
   ' "$SETUP_SOURCE"
 }
 
 setup_check_development() {
-  # Block language downloads before startup, then reuse the prepared caches.
+  # Disable downloads before startup and repeated checks.
   run -0 setup_shell '
     export COREPACK_ENABLE_NETWORK=0 UV_OFFLINE=true UV_PYTHON_DOWNLOADS=never
     export FNM_NODE_DIST_MIRROR=file:///dev/null GOPROXY=off GOTOOLCHAIN=local
     exec zsh -lic "$1" _ "$2"
   ' _ '
+    source "$1/tests/helpers/development-flow.bash"
     source "$1/tests/helpers/setup-development.bash"
     setup_development_check
   ' "$SETUP_SOURCE"

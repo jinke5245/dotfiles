@@ -8,10 +8,9 @@ setup_development_versions() {
   fnm list
   node --version
   corepack --version
-  pnpm --version
   go version
   uv --version
-  "$HOME/projects/python/.venv/bin/python" --version
+  uvx --version
 }
 
 setup_development_prepare() (
@@ -26,19 +25,19 @@ setup_development_prepare() (
   done
   test "$(fnm default)" = "$(node --version)"
   node -e 'if (!process.release.lts) process.exit(1)'
+  test -z "${GOROOT:-}${GOPATH:-}${VIRTUAL_ENV:-}"
+  case ":$PATH:" in
+    *":$HOME/go/bin:"*) ;;
+    *) return 1 ;;
+  esac
 
   # Apply prepares shims, but must not download pnpm or managed Python.
   test ! -e "$COREPACK_HOME"
   test ! -e "$UV_PYTHON_INSTALL_DIR"
-  cp -R "$HOME/dotfiles/tests/fixtures/development" "$HOME/projects"
-
-  cd "$HOME/projects/go"
-  go run .
-  go install .
-  dotfiles-smoke
+  local snapshot="$HOME/.test-development"
+  development_flow_prepare "$HOME" "$snapshot/files"
 
   cd "$HOME/projects/node"
-  node --version > .node-version
   # Use the repository's exact package-manager declaration without installing
   # its development dependencies or inheriting its separate Node version file.
   node -e '
@@ -52,25 +51,8 @@ setup_development_prepare() (
   actual_pnpm="$(pnpm --version)"
   test "$actual_pnpm" = "$expected_pnpm"
   test -d "$COREPACK_HOME"
-  pnpm exec node main.cjs
 
-  # Explicit project use downloads Python; it is not a setup default.
-  cd "$HOME/projects/python"
-  uv venv --managed-python --python 3.13
-  uv run --no-project --python .venv/bin/python main.py
-  test -d "$UV_PYTHON_INSTALL_DIR"
-  test -z "${VIRTUAL_ENV:-}"
-
-  # Preserve a project-local dependency without adding a registry dependency.
-  mkdir -p "$HOME/projects/node/node_modules/local-fixture"
-  printf 'module.exports = "local:ok";\n' > "$HOME/projects/node/node_modules/local-fixture/index.cjs"
-
-  local snapshot="$HOME/.test-development"
-  mkdir "$snapshot"
-  cp -Rp "$HOME/projects" "$snapshot/projects"
-  cp -p "$HOME/go/bin/dotfiles-smoke" "$snapshot/go-tool"
-  readlink "$HOME/projects/python/.venv/bin/python" > "$snapshot/python-link"
-  cd "$HOME/projects/node"
+  cp -p package.json "$snapshot/package.json"
   setup_development_versions > "$snapshot/versions"
 )
 
@@ -81,20 +63,11 @@ setup_development_check() (
   cd "$HOME/projects/node"
   setup_development_versions > "$snapshot/versions.after"
   cmp "$snapshot/versions" "$snapshot/versions.after"
-  pnpm exec node main.cjs
-  test "$(node -p 'require("./node_modules/local-fixture/index.cjs")')" = local:ok
-  test "$(fnm current)" = "$(fnm default)"
-
-  dotfiles-smoke
-  cmp "$HOME/go/bin/dotfiles-smoke" "$snapshot/go-tool"
-  test ! "$HOME/go/bin/dotfiles-smoke" -nt "$snapshot/go-tool"
-  test ! "$HOME/go/bin/dotfiles-smoke" -ot "$snapshot/go-tool"
-
-  cd "$HOME/projects/python"
-  uv run --no-project --python .venv/bin/python main.py
+  test "$(node --version)" = "$(fnm default)"
+  test "$(command -v pnpm)" = "$FNM_MULTISHELL_PATH/bin/pnpm"
+  test ! -e "$UV_PYTHON_INSTALL_DIR"
   test -z "${VIRTUAL_ENV:-}"
-  test "$(readlink .venv/bin/python)" = "$(cat "$snapshot/python-link")"
-  test ! .venv/pyvenv.cfg -nt "$snapshot/projects/python/.venv/pyvenv.cfg"
-  test ! .venv/pyvenv.cfg -ot "$snapshot/projects/python/.venv/pyvenv.cfg"
-  diff -r "$snapshot/projects" "$HOME/projects"
+
+  cmp package.json "$snapshot/package.json"
+  development_flow_check "$HOME" "$snapshot/files"
 )
