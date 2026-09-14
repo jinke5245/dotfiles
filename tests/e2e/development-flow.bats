@@ -6,7 +6,6 @@
 load '../helpers/sandbox.bash'
 load '../helpers/zsh.bash'
 load '../helpers/flow.bash'
-load '../helpers/development-flow.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0
@@ -32,17 +31,4 @@ setup() {
     [[ $(node --version) = $(fnm default) ]] &&
     go version && fnm --version && uv --version && uvx --version && corepack --version
   '
-}
-
-@test "repeated apply preserves the Node default and existing development files" {
-  development_flow_prepare "$SANDBOX_HOME" "$SANDBOX_ROOT/development.before"
-
-  run -0 sandbox_zsh -lic 'fnm default && fnm list'
-  local versions_before="$output"
-
-  run -0 sandbox_chezmoi apply
-
-  development_flow_check "$SANDBOX_HOME" "$SANDBOX_ROOT/development.before"
-  run -0 sandbox_zsh -lic 'fnm default && fnm list'
-  [ "$output" = "$versions_before" ]
 }

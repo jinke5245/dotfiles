@@ -172,7 +172,6 @@ setup_check_flow() {
   setup_check_git_tools
   setup_check_ssh_keys
   setup_prepare_development
-  setup_check_development
 
   # Follow the documented identity-edit commands before reapplying. The saved
   # inputs and SSH comment must remain independent of these later Git changes.
@@ -182,7 +181,6 @@ setup_check_flow() {
     git config --file "$HOME/.config/git/config.local" core.quotePath true
     printf "\n# Keep this local comment.\n" >> "$HOME/.config/git/config.local"
   '
-  setup_check_git_configuration
 
   # Snapshot managed and local configuration plus the installed framework.
   setup_shell '
@@ -219,8 +217,6 @@ setup_check_flow() {
     test "$(cat "$HOME/.oh-my-zsh/custom/personal-note")" = keep
   '
 
-  setup_check_git_tools
   setup_check_git_configuration
-  setup_check_ssh_keys
   setup_check_development
 }

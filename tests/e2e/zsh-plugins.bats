@@ -35,15 +35,3 @@ setup() {
   '
   [ -z "$output" ]
 }
-
-@test "machine-local configuration overrides Oh My Zsh and shared history bindings" {
-  cp "$SANDBOX_REPOSITORY/tests/fixtures/zsh/local.zsh" "$SANDBOX_HOME/.zshrc.local"
-
-  run -0 sandbox_zsh -lic '
-    [[ ${aliases[gst]} = "git status --short" ]] &&
-    [[ $EDITOR = nvim ]] &&
-    [[ $(project) = "$HOME/projects" ]] &&
-    [[ $(bindkey "^[[A") = *beginning-of-line ]]
-  '
-  [ -z "$output" ]
-}
