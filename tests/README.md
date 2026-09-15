@@ -100,7 +100,7 @@ SSH integration tests require `ssh-keygen` and generate real keys only in tempor
 
 Zsh and iTerm2 platform cases use chezmoi data overrides and temporary paths. These cases do not replace native tests on each OS.
 
-iTerm2 deployment tests exclude scripts; installation tests substitute `defaults` and `plutil` at the command boundary. The macOS-only preference E2E uses the real tools with explicit temporary file paths, since changing HOME alone does not isolate an app's preference domain. It never launches iTerm2 or reads or changes the user's preferences.
+iTerm2 deployment tests exclude scripts; installation tests substitute `defaults` and `plutil` at the command boundary. The macOS-only preference E2E uses the real tools with explicit temporary file paths, since changing HOME alone does not isolate an app's preference domain. It never launches iTerm2 or reads or changes the user's preferences. The existing macOS E2E job runs this case; Linux skips it, and the setup suite checks Brewfile dependencies after installation.
 
 Development integration cases use a strict fnm fixture for the two shell setup commands and real Zsh completion discovery. Runtime and package-manager fixtures reject startup-time invocations. E2E uses real fnm, uv, and uvx completion definitions and verifies that starting a shell with a missing project Node version does not install it.
 
@@ -129,3 +129,13 @@ Both setup platforms use `helpers/ssh-flow.bash` once to verify matching, unencr
 Repository copies use tracked files and nonignored untracked files from the current Git checkout, preserving uncommitted contents. Ignored local files, Git metadata, dependencies, and caches are excluded. A temporary local Git remote serves this snapshot under the documented clone URL; dependency downloads remain real. The Ubuntu setup container has no host directories, credentials, or Docker socket mounted, and teardown removes it on success or failure.
 
 `setup-macos.bats` requires native macOS and GitHub-hosted runner markers, and explicitly refuses act and self-hosted runners. In that disposable VM only, it removes preinstalled Homebrew with the official uninstaller before following setup in a temporary HOME. It shares the installation, startup, and repeat-apply assertions with Ubuntu; teardown removes its temporary files. Local commands never run this installation path.
+
+## Manual iTerm2 check
+
+After following the [macOS apply instructions](../README.md#iterm2) and reopening iTerm2:
+
+- Open a new window and confirm it uses the `Dotfiles` Profile and starts a login shell.
+- Briefly check the font, colors, tab appearance, Shift-Return, and copy/paste against the shared settings.
+- Confirm existing local connection Profiles remain available.
+
+One brief check on macOS is sufficient; automated GUI tests and checks on multiple physical Macs are not required. Record the result in the PR.
