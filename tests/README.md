@@ -4,7 +4,7 @@ See the root README for [development requirements](../README.md#requirements) an
 
 ## Suites
 
-Group integration suites by responsibility: `chezmoi`, `install`, `git`, `ssh`, `zsh`, and `harness` (test isolation and safety). Keep descriptive filenames, and organize scenarios within each file. Tests run independently of directory order.
+Group integration suites by responsibility: `chezmoi`, `install`, `git`, `ssh`, `zsh`, `iterm2`, and `harness` (test isolation and safety). Keep descriptive filenames, and organize scenarios within each file. Tests run independently of directory order.
 
 - Integration tests own detailed configuration rules, failure cases, and external-script updates.
 - Offline E2E keeps one apply / startup / reapply flow, basic checks with real dependencies, and isolation checks.
@@ -33,6 +33,7 @@ Group integration suites by responsibility: `chezmoi`, `install`, `git`, `ssh`, 
 | [integration/zsh/zsh-development.bats](integration/zsh/zsh-development.bats)                       | fnm environment and completion order, uv/uvx discovery and auditing, missing dependencies, local overrides, and Go tool paths.        |
 | [integration/zsh/zsh-plugins.bats](integration/zsh/zsh-plugins.bats)                               | Completion auditing, plugin loading order, prefix discovery and absence, missing dependencies, and arrow bindings.                    |
 | [integration/zsh/zsh-local.bats](integration/zsh/zsh-local.bats)                                   | Local overrides, missing and unreadable files, startup modes, repeat-apply preservation, and Git / chezmoi exclusions.                |
+| [integration/iterm2/iterm2-profile.bats](integration/iterm2/iterm2-profile.bats)                   | Dynamic Profile JSON structure, macOS-only deployment, and local Profile / preference preservation across apply.                      |
 | [integration/harness/sandbox-isolation.bats](integration/harness/sandbox-isolation.bats)           | Current edits and new files are copied; ignored private data, Git metadata, and deleted files are excluded.                           |
 | [integration/harness/flow-homebrew-safety.bats](integration/harness/flow-homebrew-safety.bats)     | Offline E2E substitutes read-only dependency checks and rejects other Homebrew operations.                                            |
 | [integration/harness/setup-container-safety.bats](integration/harness/setup-container-safety.bats) | Container setup reports missing Docker and stops before attempting installation.                                                      |
@@ -95,7 +96,7 @@ Git integration tests use real Git with a temporary HOME, a test-owned system co
 
 SSH integration tests require `ssh-keygen` and generate real keys only in temporary homes, with explicit key paths and an empty inherited environment. No SSH connections are made. Tests substitute only passphrase input through a test-owned askpass program; unavailable input fails immediately without opening a terminal prompt. Private-key contents are never printed or stored in fixtures.
 
-Zsh platform cases use chezmoi data overrides and temporary installation paths. These cases do not replace native tests on each OS.
+Zsh and iTerm2 platform cases use chezmoi data overrides and temporary paths. These cases do not replace native tests on each OS. iTerm2 checks deploy files with scripts excluded; they never launch iTerm2 or read or change the user's preferences.
 
 Development integration cases use a strict fnm fixture for the two shell setup commands and real Zsh completion discovery. Runtime and package-manager fixtures reject startup-time invocations. E2E uses real fnm, uv, and uvx completion definitions and verifies that starting a shell with a missing project Node version does not install it.
 

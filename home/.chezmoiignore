@@ -1,2 +1,6 @@
 .zshrc.local
 .config/git/config.local
+
+{{ if ne .chezmoi.os "darwin" }}
+Library/
+{{ end }}
