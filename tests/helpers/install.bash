@@ -16,7 +16,7 @@ install_sandbox_create() {
 
   # Shadow external commands so tests cannot reach the network or package manager.
   local fixture
-  for fixture in apt-get curl git sudo uname; do
+  for fixture in apt-get curl defaults git plutil sudo uname; do
     cp "$SANDBOX_REPOSITORY/tests/fixtures/install/$fixture.bash" "$SANDBOX_ROOT/bin/$fixture"
     chmod +x "$SANDBOX_ROOT/bin/$fixture"
   done

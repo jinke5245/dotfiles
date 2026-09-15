@@ -79,6 +79,12 @@ Run these commands from the repository root. Edit files under `home/`; changes m
 
 Each apply picks up changes to the Brewfile and installation scripts. Brewfile packages use `brew bundle install --no-upgrade`: missing packages are installed without requesting routine upgrades or removing other packages. Homebrew and Oh My Zsh upgrades remain managed by their own update mechanisms.
 
+### iTerm2
+
+On macOS, setup installs iTerm2 through Homebrew and selects the shared `Dotfiles` Profile. It uses Monaco 12, included with macOS. Local Profiles and unrelated preferences remain on the device.
+
+Quit iTerm2 before applying configuration; use Terminal or another terminal for the apply, then reopen iTerm2. This lets the shared global preferences take effect without iTerm2 overwriting them on exit.
+
 ### Development tools
 
 After setup, use the tools from a login Zsh:

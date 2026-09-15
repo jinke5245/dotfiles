@@ -11,3 +11,5 @@ brew "zsh-autosuggestions"
 brew "zsh-completions"
 brew "zsh-history-substring-search"
 brew "zsh-syntax-highlighting"
+
+cask "iterm2" if OS.mac?

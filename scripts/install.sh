@@ -18,6 +18,8 @@ main() {
   source "$script_dir/lib/git.sh"
   # shellcheck source=scripts/lib/ssh.sh
   source "$script_dir/lib/ssh.sh"
+  # shellcheck source=scripts/lib/iterm2.sh
+  source "$script_dir/lib/iterm2.sh"
 
   install_homebrew
   install_homebrew_packages "$repository_root/Brewfile"
@@ -25,6 +27,7 @@ main() {
   install_oh_my_zsh
   initialize_git_identity "$user_name" "$user_email"
   initialize_ssh_keys "$user_email"
+  configure_iterm2 "$repository_root/home/Library/Application Support/iTerm2/DynamicProfiles/dotfiles.json"
 }
 
 main "$@"

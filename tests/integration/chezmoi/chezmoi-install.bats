@@ -20,7 +20,8 @@ setup() {
       source "$1/lib/node.sh" &&
       source "$1/lib/oh-my-zsh.sh" &&
       source "$1/lib/git.sh" &&
-      source "$1/lib/ssh.sh"
+      source "$1/lib/ssh.sh" &&
+      source "$1/lib/iterm2.sh"
   ' _ "$SANDBOX_REPOSITORY/scripts"
 
   [ -z "$output" ]
