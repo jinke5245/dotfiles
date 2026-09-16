@@ -25,6 +25,8 @@ sudo apt-get install --yes ca-certificates curl git openssh-client zsh
 
 Before the first apply, review the [Git migration steps](#git) if you already have Git configuration.
 
+On macOS, run setup from another terminal with iTerm2 closed.
+
 Install chezmoi using its [official installer](https://www.chezmoi.io/install/#one-line-binary-install), clone the repository, and initialize your identity before previewing and applying configuration:
 
 ```sh
@@ -68,7 +70,7 @@ Shared integrations add extra completions, autojump (`j <directory-pattern>`), h
 
 ### Daily use
 
-Run these commands from the repository root. Edit files under `home/`; changes made only to deployed files such as `~/.zshrc` can be overwritten by the next apply.
+Run these commands from the repository root. Edit the shared source files in the repository; changes made only to deployed files such as `~/.zshrc` can be overwritten by the next apply.
 
 | Task                          | Command                                      |
 | ----------------------------- | -------------------------------------------- |
@@ -78,6 +80,21 @@ Run these commands from the repository root. Edit files under `home/`; changes m
 | Reload the login environment  | `exec zsh -l`                                |
 
 Each apply picks up changes to the Brewfile and installation scripts. Brewfile packages use `brew bundle install --no-upgrade`: missing packages are installed without requesting routine upgrades or removing other packages. Homebrew and Oh My Zsh upgrades remain managed by their own update mechanisms.
+
+### iTerm2
+
+On macOS, setup installs iTerm2 through Homebrew and selects the shared `Dotfiles` Profile. It uses the system Monaco font at size 12, separate light/dark colors, no transparency or blur, and 1,000 scrollback lines. Homebrew Bundle can adopt an existing app at its installation destination.
+
+| Content                                          | Shared source                                                                           |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| Profile appearance and terminal behavior         | [Profile JSON](<home/Library/Application Support/iTerm2/DynamicProfiles/dotfiles.json>) |
+| Global tab, copy/paste, and keyboard preferences | [iTerm2 library](scripts/lib/iterm2.sh)                                                 |
+
+The Profile is deployed to `~/Library/Application Support/iTerm2/DynamicProfiles/dotfiles.json`. Edit the shared sources above and use the normal [preview/apply commands](#daily-use). Review global preference changes in the script; they are written during apply.
+
+Quit iTerm2 before applying configuration; use Terminal or another terminal for the apply, then reopen iTerm2. This lets the shared global preferences take effect without iTerm2 overwriting them on exit.
+
+Keep connection commands and device-specific working directories in local Profiles. Applying preserves those Profiles and unrelated preferences. Linux setup does not install or configure iTerm2.
 
 ### Development tools
 
@@ -227,20 +244,21 @@ Register the public key with your Git host or servers separately.
 
 ```text
 .
-├── .chezmoiroot           # Selects home/ as the source root
-├── Brewfile               # Shared Homebrew packages
-├── home/                  # Chezmoi source state
+├── .chezmoiroot            # Selects home/ as the source root
+├── Brewfile                # Shared Homebrew packages
+├── home/                   # Chezmoi source state
 │   ├── .chezmoi.toml.tmpl  # Local identity initialization
-│   ├── .chezmoiignore     # Deployment exclusions
-│   ├── .chezmoiscripts/   # Chezmoi lifecycle adapters
-│   ├── dot_config/git/    # Shared Git configuration
-│   ├── dot_zprofile.tmpl  # Login environment
-│   └── dot_zshrc          # Interactive shell
-├── scripts/               # Installation scripts
-│   ├── install.sh         # Entry point
-│   └── lib/               # Installation and initialization functions
-├── tests/                 # Behavior tests and helpers
-└── .github/workflows/     # CI checks
+│   ├── .chezmoiignore      # Deployment exclusions
+│   ├── .chezmoiscripts/    # Chezmoi lifecycle adapters
+│   ├── Library/            # macOS application configuration
+│   ├── dot_config/git/     # Shared Git configuration
+│   ├── dot_zprofile.tmpl   # Login environment
+│   └── dot_zshrc           # Interactive shell
+├── scripts/                # Installation scripts
+│   ├── install.sh          # Entry point
+│   └── lib/                # Installation and initialization functions
+├── tests/                  # Behavior tests and helpers
+└── .github/workflows/      # CI checks
 ```
 
 Chezmoi filename attributes define target paths: for example, `home/dot_zshrc` maps to `~/.zshrc`. Repository documentation, tooling, and `scripts/` stay outside the deployment source.
