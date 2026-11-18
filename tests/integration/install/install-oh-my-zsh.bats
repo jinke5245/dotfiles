@@ -50,7 +50,7 @@ setup() {
     ZSH="$SANDBOX_HOME/elsewhere" \
     ZDOTDIR="$SANDBOX_HOME/elsewhere" \
     /bin/bash -c 'source "$1" && install_oh_my_zsh' _ \
-    "$SANDBOX_REPOSITORY/scripts/lib/oh-my-zsh.sh"
+    "$SANDBOX_REPOSITORY/scripts/install/lib/oh-my-zsh.sh"
 
   [ -f "$SANDBOX_HOME/.oh-my-zsh/oh-my-zsh.sh" ]
   [ ! -e "$SANDBOX_HOME/elsewhere" ]

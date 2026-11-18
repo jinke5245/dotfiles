@@ -2,6 +2,6 @@
 #!/usr/bin/env bash
 
 # Single-quote arguments while preserving literal backslashes.
-exec bash '{{ joinPath .chezmoi.workingTree "scripts" "install.sh" | replace "'" "'\\''" }}' \
+exec bash '{{ joinPath .chezmoi.workingTree "scripts" "install" "install.sh" | replace "'" "'\\''" }}' \
   '{{ get $user "name" | default "" | replace "'" "'\\''" }}' \
   '{{ get $user "email" | default "" | replace "'" "'\\''" }}'

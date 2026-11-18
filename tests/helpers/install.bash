@@ -43,8 +43,8 @@ install_sandbox_create() {
     -e "s|/opt/homebrew|$SANDBOX_ROOT/prefixes/apple|g" \
     -e "s|/usr/local|$SANDBOX_ROOT/prefixes/intel|g" \
     -e "s|/home/linuxbrew/.linuxbrew|$SANDBOX_ROOT/prefixes/linux|g" \
-    "$SANDBOX_REPOSITORY/scripts/lib/homebrew.sh" > "$SANDBOX_ROOT/homebrew.sh"
-  mv "$SANDBOX_ROOT/homebrew.sh" "$SANDBOX_REPOSITORY/scripts/lib/homebrew.sh"
+    "$SANDBOX_REPOSITORY/scripts/install/lib/homebrew.sh" > "$SANDBOX_ROOT/homebrew.sh"
+  mv "$SANDBOX_ROOT/homebrew.sh" "$SANDBOX_REPOSITORY/scripts/install/lib/homebrew.sh"
 }
 
 install_sandbox_run() (
@@ -65,7 +65,7 @@ install_sandbox_run() (
 install_sandbox_library() {
   # The child process sources the library, then calls the requested function.
   install_sandbox_run /bin/bash -c 'source "$1" && "$2"' _ \
-    "$SANDBOX_REPOSITORY/scripts/lib/$1.sh" "$2"
+    "$SANDBOX_REPOSITORY/scripts/install/lib/$1.sh" "$2"
 }
 
 install_sandbox_platform() {

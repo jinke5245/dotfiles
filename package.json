@@ -23,8 +23,8 @@
     "prettier-plugin-sh": "^0.19.0"
   },
   "scripts": {
-    "prepare": "run-s prepare:*",
-    "prepare:husky": "husky",
+    "prepare": "node scripts/dev/prepare-husky.mjs",
+    "prepare:husky": "node scripts/dev/prepare-husky.mjs",
     "check": "run-s lint format:check test",
     "lint-staged": "lint-staged --concurrent false",
     "lint": "run-s --continue-on-error lint:*",
@@ -40,7 +40,7 @@
     "test:e2e": "bats --recursive --filter-tags '!network' --print-output-on-failure tests/e2e",
     "test:setup": "bats --recursive --filter-tags network,container --print-output-on-failure tests/e2e",
     "test:setup:macos": "bats --recursive --filter-tags network,macos --print-output-on-failure tests/e2e",
-    "ci:run": "bash scripts/run-if-available.sh act workflow_dispatch",
+    "ci:run": "bash scripts/dev/run-if-available.sh act workflow_dispatch",
     "ci:test": "run-s ci:test:*",
     "ci:test:check": "pnpm ci:run --job check",
     "ci:test:test-e2e": "pnpm ci:run --job test-e2e --matrix os:ubuntu-latest",

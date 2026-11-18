@@ -42,7 +42,7 @@ git_identity_initialize() {
   # Shell snippets expand only in the isolated child process.
   # shellcheck disable=SC2016
   git_sandbox_run bash -euo pipefail -c '
-    source "$1/scripts/lib/git.sh"
+    source "$1/scripts/install/lib/git.sh"
     shift
     initialize_git_identity "$@"
   ' _ "$SANDBOX_REPOSITORY" "$@"

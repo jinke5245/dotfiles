@@ -22,8 +22,8 @@ node_initialize() {
   # The real installation function runs without inherited shell configuration.
   # shellcheck disable=SC2016
   install_sandbox_run env "$@" bash -euo pipefail -c '
-    source "$1/scripts/lib/homebrew.sh"
-    source "$1/scripts/lib/node.sh"
+    source "$1/scripts/install/lib/homebrew.sh"
+    source "$1/scripts/install/lib/node.sh"
     initialize_node
   ' _ "$SANDBOX_REPOSITORY"
 }

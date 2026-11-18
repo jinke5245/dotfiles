@@ -88,7 +88,7 @@ On macOS, setup installs iTerm2 through Homebrew and selects the shared `Dotfile
 | Content                                          | Shared source                                                                           |
 | ------------------------------------------------ | --------------------------------------------------------------------------------------- |
 | Profile appearance and terminal behavior         | [Profile JSON](<home/Library/Application Support/iTerm2/DynamicProfiles/dotfiles.json>) |
-| Global tab, copy/paste, and keyboard preferences | [iTerm2 library](scripts/lib/iterm2.sh)                                                 |
+| Global tab, copy/paste, and keyboard preferences | [iTerm2 library](scripts/install/lib/iterm2.sh)                                         |
 
 The Profile is deployed to `~/Library/Application Support/iTerm2/DynamicProfiles/dotfiles.json`. Edit the shared sources above and use the normal [preview/apply commands](#daily-use). Review global preference changes in the script; they are written during apply.
 
@@ -254,9 +254,11 @@ Register the public key with your Git host or servers separately.
 │   ├── dot_config/git/     # Shared Git configuration
 │   ├── dot_zprofile.tmpl   # Login environment
 │   └── dot_zshrc           # Interactive shell
-├── scripts/                # Installation scripts
-│   ├── install.sh          # Entry point
-│   └── lib/                # Installation and initialization functions
+├── scripts/                # Installation and repository development scripts
+│   ├── dev/                # Repository development helpers
+│   └── install/            # Machine setup
+│       ├── install.sh      # Installation entry point
+│       └── lib/            # Installation and initialization functions
 ├── tests/                  # Behavior tests and helpers
 └── .github/workflows/      # CI checks
 ```

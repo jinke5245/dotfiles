@@ -13,7 +13,7 @@ setup() {
 }
 
 @test "the entry point prepares Node after Bundle and before Oh My Zsh" {
-  run -0 install_sandbox_run bash "$SANDBOX_REPOSITORY/scripts/install.sh"
+  run -0 install_sandbox_run bash "$SANDBOX_REPOSITORY/scripts/install/install.sh"
 
   local events
   events="$(cat "$NODE_TEST_STATE/events.log")"
@@ -182,8 +182,8 @@ setup() {
   # Shell initialization is confined to the function's subprocess.
   # shellcheck disable=SC2016
   run -0 install_sandbox_run bash -euo pipefail -c '
-    source "$1/scripts/lib/homebrew.sh"
-    source "$1/scripts/lib/node.sh"
+    source "$1/scripts/install/lib/homebrew.sh"
+    source "$1/scripts/install/lib/node.sh"
     previous_path="$PATH"
     initialize_node
     [ "$PATH" = "$previous_path" ]

@@ -37,7 +37,7 @@ setup() {
   # Run the real library twice with native macOS tools; no package installation or GUI.
   for _ in 1 2; do
     run -0 env -i HOME="$SANDBOX_HOME" PATH=/usr/bin:/bin /bin/bash -eu -c '
-      source "$1/scripts/lib/iterm2.sh"
+      source "$1/scripts/install/lib/iterm2.sh"
       configure_iterm2 "$2"
     ' _ "$SANDBOX_REPOSITORY" "$profile"
   done
