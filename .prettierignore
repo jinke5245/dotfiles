@@ -1,16 +1,27 @@
-# ignore files
+# ignore files and directories
 .gitignore
-
-# lock files
-*-lock.*
-
-# generated files
-.husky/_/
-
-# imported files
-.agents/skills
 
 # zsh syntax is checked with zsh
 *.zsh
 *zshrc*
 *zprofile*
+
+# generated files
+.husky/_/
+
+# caches and virtual environments
+__pycache__/
+.cache/
+.pnpm-store/
+.pytest_cache/
+.ruff_cache/
+.uv-cache/
+.venv/
+
+# lock files
+*-lock.*
+*.lock
+
+# local workspaces and agent files
+.agents/
+.worktrees/
