@@ -1,5 +1,3 @@
-# eslint-disable yaml/no-empty-mapping-value
-
 name: CI
 
 on:

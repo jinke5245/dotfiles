@@ -13,6 +13,12 @@ zsh_fixture_development() {
   done
   cp "$prefix/bin/node" "$SANDBOX_HOME/.fnm-test/multishell/bin/node"
 
+  mkdir -p "$prefix/opt/rustup/bin"
+  for command in rustup rustc cargo; do
+    cp "$SANDBOX_REPOSITORY/tests/fixtures/zsh/runtime-command.bash" "$prefix/opt/rustup/bin/$command"
+    chmod +x "$prefix/opt/rustup/bin/$command"
+  done
+
   zsh_fixture_uv_completions "$prefix"
 }
 

@@ -46,15 +46,12 @@ setup_container_shell() {
 }
 
 setup_repository() {
-  # Clone the current workspace snapshot rather than the default branch. Only
-  # this repository's URL is redirected; all dependency installers use HTTPS.
+  # Commit the workspace snapshot so setup tests can clone current changes.
   setup_shell '
     git -C "$1" init --initial-branch=main
     git -C "$1" add --all
     git -C "$1" -c user.name="Dotfiles test" \
       -c user.email=test@example.invalid commit --quiet -m "Test snapshot"
-    git config --global "url.file://$1.insteadOf" \
-      https://github.com/jinke5245/dotfiles.git
   ' _ "$1"
 }
 
@@ -118,10 +115,11 @@ setup_check_flow() {
   run -0 setup_shell '
     # Keep existing shell customization, but start without a Git identity.
     cp "$1/tests/fixtures/zsh/local.zsh" "$HOME/.zshrc.local"
+    printf "export DOTFILES_TEST_LOGIN_LOCAL=loaded\n" > "$HOME/.zprofile.local"
     test ! -e "$HOME/.config/git/config.local"
     sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin"
     export PATH="$HOME/.local/bin:$PATH"
-    git clone https://github.com/jinke5245/dotfiles.git "$HOME/dotfiles"
+    git clone "$1" "$HOME/dotfiles"
     cd "$HOME/dotfiles"
     chezmoi --source "$PWD" init \
       --promptString "User name=Initial User,User email=initial@example.invalid" </dev/null
@@ -150,6 +148,7 @@ setup_check_flow() {
 
   run -0 setup_shell 'exec zsh -lic "$1" _ "$2"' _ '
     [[ $HOMEBREW_PREFIX = "$1" ]] &&
+    [[ $DOTFILES_TEST_LOGIN_LOCAL = loaded ]] &&
     [[ $path[1] = "$FNM_MULTISHELL_PATH/bin" ]] &&
     [[ $(command -v node) = "$FNM_MULTISHELL_PATH/bin/node" ]] &&
     [[ $ZSH_THEME = robbyrussell ]] &&
@@ -165,6 +164,7 @@ setup_check_flow() {
   # Package-manager diagnostics are separate from a quiet shell startup.
   run -0 setup_shell 'exec zsh -lc "$1"' _ '
     [[ $path[1] = "$HOME/bin" && $path[2] = "$HOME/.local/bin" ]] &&
+    [[ $DOTFILES_TEST_LOGIN_LOCAL = loaded ]] &&
     brew bundle check --file="$HOME/dotfiles/Brewfile" --no-upgrade &&
     brew list --versions > "$HOME/.test-package-versions"
   '
@@ -185,8 +185,8 @@ setup_check_flow() {
   # Snapshot managed and local configuration plus the installed framework.
   setup_shell '
     mkdir "$HOME/.test-before"
-    for file in .zprofile .zshrc .zshrc.local .oh-my-zsh/oh-my-zsh.sh \
-      .config/chezmoi/chezmoi.toml .config/git/config .config/git/config.local .gitconfig \
+    for file in .zprofile .zprofile.local .zshrc .zshrc.local .oh-my-zsh/oh-my-zsh.sh \
+      .config/chezmoi/chezmoi.toml .config/git/config .config/git/config.local \
       .ssh/id_ed25519 .ssh/id_ed25519.pub; do
       cp -p "$HOME/$file" "$HOME/.test-before/$(basename "$file")"
     done
@@ -206,8 +206,8 @@ setup_check_flow() {
     zsh -lc "brew list --versions" > "$HOME/.test-package-versions-after"
     cmp "$HOME/.test-package-versions" "$HOME/.test-package-versions-after"
 
-    for file in .zprofile .zshrc .zshrc.local .oh-my-zsh/oh-my-zsh.sh \
-      .config/chezmoi/chezmoi.toml .config/git/config .config/git/config.local .gitconfig \
+    for file in .zprofile .zprofile.local .zshrc .zshrc.local .oh-my-zsh/oh-my-zsh.sh \
+      .config/chezmoi/chezmoi.toml .config/git/config .config/git/config.local \
       .ssh/id_ed25519 .ssh/id_ed25519.pub; do
       before="$HOME/.test-before/$(basename "$file")"
       cmp "$HOME/$file" "$before"

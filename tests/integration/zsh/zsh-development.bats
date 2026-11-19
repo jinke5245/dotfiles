@@ -45,6 +45,46 @@ EOF
   [[ "$events" == brew-prefix$'\n'* && "$events" == *$'fnm-env\nfnm-completions\n'* ]] || return 1
 }
 
+@test "interactive shells expose rustup shims without invoking them or duplicating PATH" {
+  local mode
+  for mode in -lic -ic; do
+    run -0 --separate-stderr sandbox_zsh "$mode" '
+      source "$HOME/.zshrc"
+      for tool in rustup rustc cargo; do
+        [[ $(command -v "$tool") = "$HOMEBREW_PREFIX/opt/rustup/bin/$tool" ]] || exit 1
+      done
+      print -l -- $path | grep -Fxc "$HOMEBREW_PREFIX/opt/rustup/bin"
+    '
+
+    [ "$output" = 1 ]
+    [ -z "$stderr" ]
+  done
+  [[ "$(cat "$SANDBOX_ROOT/startup.log")" != *unexpected-runtime* ]]
+}
+
+@test "rustup shims follow the inherited Homebrew prefix" {
+  local inherited="$SANDBOX_ROOT/inherited brew"
+  zsh_fixture_plugins "$inherited"
+  zsh_fixture_development "$inherited"
+  printf 'export HOMEBREW_PREFIX=%q\n' "$inherited" >> "$SANDBOX_HOME/.zshenv"
+
+  run -0 --separate-stderr sandbox_zsh -ic 'command -v rustup'
+
+  [ "$output" = "$inherited/opt/rustup/bin/rustup" ]
+  [ -z "$stderr" ]
+}
+
+@test "missing rustup keeps shell startup quiet without adding a nonexistent PATH" {
+  rm -r "$SANDBOX_ROOT/brew/opt/rustup"
+
+  run -0 --separate-stderr sandbox_zsh -lic '
+    [[ ":$PATH:" != *":$HOMEBREW_PREFIX/opt/rustup/bin:"* ]] && print -r -- ready
+  '
+
+  [ "$output" = ready ]
+  [ -z "$stderr" ]
+}
+
 @test "uv and uvx completions are discovered without executing either tool" {
   local mode
   for mode in -lic -ic; do

@@ -1,20 +1,20 @@
-# @jinke5245/dotfiles
+# Dotfiles
 
-Personal dotfiles for macOS and Linux, managed with [chezmoi](https://www.chezmoi.io/).
+适用于 macOS 和 Debian / Ubuntu 的 dotfiles，使用 [chezmoi](https://www.chezmoi.io/) 管理。
 
 ## Usage
 
 ### Prerequisites
 
-Use a regular user account on macOS or Debian / Ubuntu, with network access and administrator permissions for dependency installation. Bash, Git, curl, Zsh, and `ssh-keygen` must be available before applying configuration.
+使用普通用户账户，并准备网络和安装依赖所需的管理员权限。应用配置前，需要有 Bash、Git、curl、Zsh 和 `ssh-keygen`。
 
-On macOS, install the Xcode Command Line Tools if needed, and wait for installation to finish:
+macOS 如未安装 Xcode Command Line Tools，先运行以下命令，等待安装完成：
 
 ```sh
 xcode-select --install
 ```
 
-On Debian / Ubuntu, use an account with `sudo` access:
+Debian / Ubuntu 使用有 `sudo` 权限的账户安装基础依赖：
 
 ```sh
 sudo apt-get update
@@ -23,17 +23,17 @@ sudo apt-get install --yes ca-certificates curl git openssh-client zsh
 
 ### Setup
 
-Before the first apply, review the [Git migration steps](#git) if you already have Git configuration.
+已有 Git 配置时，先阅读 [Git 迁移说明](#git)。macOS 请关闭 iTerm2，在其他终端中执行安装。
 
-On macOS, run setup from another terminal with iTerm2 closed.
+可以直接使用本仓库，或在 GitHub 上通过 [Use this template](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template) 创建新仓库。将下方 `<repository-url>` 替换为实际使用仓库的克隆地址。
 
-Install chezmoi using its [official installer](https://www.chezmoi.io/install/#one-line-binary-install), clone the repository, and initialize your identity before previewing and applying configuration:
+通过[官方安装脚本](https://www.chezmoi.io/install/#one-line-binary-install)安装 chezmoi，克隆仓库，再初始化身份、预览并应用配置：
 
 ```sh
 sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin"
 export PATH="$HOME/.local/bin:$PATH"
 
-git clone https://github.com/jinke5245/dotfiles.git "$HOME/dotfiles"
+git clone "<repository-url>" "$HOME/dotfiles"
 cd "$HOME/dotfiles"
 
 chezmoi --source "$PWD" init
@@ -41,133 +41,77 @@ chezmoi --source "$PWD" diff
 chezmoi --source "$PWD" apply
 ```
 
-For each identity field, `init` reads both default global Git files and their includes in Git's normal order, then reuses saved values, and prompts only if still missing. System and repository settings, environment-selected Git files, and command-scope overrides are excluded. It saves the name and email under `[data.user]` in `~/.config/chezmoi/chezmoi.toml`, outside the repository. `diff` and `apply` do not prompt for identity.
+`init` 分别查找姓名和邮箱：先按 Git 原生顺序读取默认的全局配置及其 include，再使用已保存的值，仍缺失时才询问。不读取系统、仓库、环境变量指定的配置或命令级覆盖值。结果保存到仓库外的 `~/.config/chezmoi/chezmoi.toml` 中的 `[data.user]`。
 
-Repeated `init` preserves unrelated chezmoi settings but regenerates the TOML file; its comments and formatting are not retained.
+重复 `init` 会保留其他 chezmoi 配置，但会重新生成 TOML，原有注释和格式不会保留。`init` 不安装软件、不修改 Git 配置、不生成 SSH 密钥；`diff` 和 `apply` 不再询问身份。
 
-For unattended setup, replace the `init` command with supplied answers; existing global or saved values still take precedence:
+无人值守安装时，用下面的命令替换 `init`；已有全局配置或已保存的值仍优先使用：
 
 ```sh
 chezmoi --source "$PWD" init \
   --promptString 'User name=Your Name,User email=you@example.com' < /dev/null
 ```
 
-Both fields are required during initialization; missing input stops unattended setup. Initialization does not install software, change Git configuration, or generate SSH keys.
+姓名和邮箱都不能为空，缺少输入会停止初始化。
 
-Applying prepares Homebrew, installs the packages declared in `Brewfile`, prepares Node.js and Corepack, installs Oh My Zsh, and initializes local Git identity and SSH keys before writing managed configuration. Homebrew and Oh My Zsh use their official installers; installation or initialization failures stop the apply. On Debian / Ubuntu, the script also installs [Homebrew's build prerequisites](https://docs.brew.sh/Homebrew-on-Linux).
+`apply` 会在写入托管配置前准备 Homebrew、安装 [Brewfile](Brewfile) 中的依赖、准备 Node.js 和 Corepack、安装 Oh My Zsh，并初始化本机 Git 身份和 SSH 密钥。Homebrew 和 Oh My Zsh 使用官方安装脚本；任何安装或初始化失败都会停止应用。Debian / Ubuntu 还会安装 [Homebrew 的构建依赖](https://docs.brew.sh/Homebrew-on-Linux)。
 
-Start a login Zsh to load the environment and interactive configuration:
+完成后启动登录 Zsh：
 
 ```sh
 exec zsh -l
 ```
 
-Login shells initialize Homebrew and PATH; interactive shells load Oh My Zsh with the `robbyrussell` theme and `git` plugin. Installation does not change the account's default shell. To select Zsh as the default, use `chsh -s "$(command -v zsh)"` separately.
-
-The Brewfile includes Git, Git LFS, GitHub CLI (`gh`), GitLab CLI (`glab`), and Tig. System Git is used for initial setup; login shells make the Homebrew tools available. Authenticate `gh` and `glab` separately on each device.
-
-Shared integrations add extra completions, autojump (`j <directory-pattern>`), history-based suggestions (Right accepts), syntax highlighting, and substring history search (Up / Down). Extra completion definitions load before Oh My Zsh initializes completion; the other integrations load afterward. Brewfile supplies the required plugins; shell startup loads them directly when a Homebrew prefix is available and reports missing files without installing packages.
+登录 shell 初始化 Homebrew 和 PATH，交互式 shell 加载共享 Zsh 配置及插件。启动 shell 不安装软件，安装也不会修改账户的默认 shell。
 
 ### Daily use
 
-Run these commands from the repository root. Edit the shared source files in the repository; changes made only to deployed files such as `~/.zshrc` can be overwritten by the next apply.
+在仓库根目录操作，共享配置源位于 [home/](home/)；例如 `home/dot_zshrc` 部署到 `~/.zshrc`。直接编辑源文件，仅修改部署文件可能被下一次应用覆盖。
 
-| Task                          | Command                                      |
-| ----------------------------- | -------------------------------------------- |
-| Preview configuration changes | `chezmoi --source "$PWD" diff`               |
-| Apply local changes           | `chezmoi --source "$PWD" apply`              |
-| Pull repository updates       | `git pull --ff-only`, then preview and apply |
-| Reload the login environment  | `exec zsh -l`                                |
+| 操作         | 命令                                 |
+| ------------ | ------------------------------------ |
+| 预览配置变更 | `chezmoi --source "$PWD" diff`       |
+| 应用本地变更 | `chezmoi --source "$PWD" apply`      |
+| 获取仓库更新 | `git pull --ff-only`，然后预览并应用 |
+| 重载登录环境 | `exec zsh -l`                        |
 
-Each apply picks up changes to the Brewfile and installation scripts. Brewfile packages use `brew bundle install --no-upgrade`: missing packages are installed without requesting routine upgrades or removing other packages. Homebrew and Oh My Zsh upgrades remain managed by their own update mechanisms.
+每次 `apply` 都会执行安装脚本，读取最新 Brewfile。依赖通过 `brew bundle install --no-upgrade` 补齐，不主动升级或删除其他包；已有 Node 默认版本和项目环境会保留。Homebrew 和 Oh My Zsh 的升级由各自机制管理。
 
 ### iTerm2
 
-On macOS, setup installs iTerm2 through Homebrew and selects the shared `Dotfiles` Profile. It uses the system Monaco font at size 12, separate light/dark colors, no transparency or blur, and 1,000 scrollback lines. Homebrew Bundle can adopt an existing app at its installation destination.
+macOS 安装会通过 Homebrew 安装 iTerm2，并将共享的 `Dotfiles` Profile 设为默认。
 
-| Content                                          | Shared source                                                                           |
-| ------------------------------------------------ | --------------------------------------------------------------------------------------- |
-| Profile appearance and terminal behavior         | [Profile JSON](<home/Library/Application Support/iTerm2/DynamicProfiles/dotfiles.json>) |
-| Global tab, copy/paste, and keyboard preferences | [iTerm2 library](scripts/install/lib/iterm2.sh)                                         |
+| 内容                           | 共享源文件                                                                              |
+| ------------------------------ | --------------------------------------------------------------------------------------- |
+| Profile 外观和终端行为         | [Profile JSON](<home/Library/Application Support/iTerm2/DynamicProfiles/dotfiles.json>) |
+| 全局标签页、复制粘贴和键盘设置 | [iTerm2 安装库](scripts/install/lib/iterm2.sh)                                          |
 
-The Profile is deployed to `~/Library/Application Support/iTerm2/DynamicProfiles/dotfiles.json`. Edit the shared sources above and use the normal [preview/apply commands](#daily-use). Review global preference changes in the script; they are written during apply.
+Profile 部署到 `~/Library/Application Support/iTerm2/DynamicProfiles/dotfiles.json`。修改共享源后，按[日常操作](#daily-use)预览并应用；全局偏好设置由脚本在应用时写入，需审阅脚本中的全局偏好变更。
 
-Quit iTerm2 before applying configuration; use Terminal or another terminal for the apply, then reopen iTerm2. This lets the shared global preferences take effect without iTerm2 overwriting them on exit.
-
-Keep connection commands and device-specific working directories in local Profiles. Applying preserves those Profiles and unrelated preferences. Linux setup does not install or configure iTerm2.
-
-### Development tools
-
-After setup, use the tools from a login Zsh:
-
-| Tool    | Setup behavior                                                                                                                                                             |
-| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Go      | Install through Homebrew. Keep the default `GOROOT` and `GOPATH`; add `~/go/bin` to PATH for commands installed with `go install`.                                         |
-| Node.js | Install fnm through Homebrew. When no fnm default exists, install the latest LTS with `fnm install --lts`; preserve an existing default.                                   |
-| pnpm    | Enable Corepack for the default Node installation. Download pnpm on first use, following the project's `packageManager` field or Corepack's default when none is declared. |
-| Python  | Install uv through Homebrew without preinstalling Python. Let uv find or download an interpreter when explicitly used.                                                     |
-
-Shell startup initializes fnm and fnm / uv / uvx completion without installing or upgrading software. Reapplying preserves installed Node versions, the default, project environments, and local overrides. A broken fnm default stops apply and requires manual repair.
-
-#### Node.js and pnpm
-
-[fnm](https://github.com/Schniz/fnm#usage) switches installed versions when entering a directory with `.node-version` or `.nvmrc`. Missing versions require confirmation or an explicit install. From a project with a version file:
-
-```sh
-fnm install
-fnm use
-```
-
-Use `fnm use default` to return to the default, or `fnm default "$(fnm current)"` to make the selected version the default.
-
-For each additional Node installation, prepare [Corepack](https://github.com/nodejs/corepack#how-to-install) after selecting it with fnm. If that installation has no Corepack, install it into the selected environment:
-
-```sh
-npm install --global --prefix "$FNM_MULTISHELL_PATH" corepack
-```
-
-Then enable pnpm for that Node installation:
-
-```sh
-"$FNM_MULTISHELL_PATH/bin/corepack" enable pnpm --install-directory "$FNM_MULTISHELL_PATH/bin"
-pnpm --version
-```
-
-The first pnpm invocation needs network access unless its version is already cached. This repository uses Node 22 via `.node-version` and the pnpm version declared in `package.json`; its project version does not change fnm's default.
-
-#### Python
-
-Use [uv](https://docs.astral.sh/uv/pip/environments/) to create a project-local environment. For example, in a Python project directory:
-
-```sh
-uv venv --python 3.13
-uv run python --version
-```
-
-Choose the Python version per project; `3.13` is only an example. Environments are not automatically activated by shell startup. Use `uv run` to execute project commands, or `uvx <tool>` for a standalone Python tool.
+应用前退出 iTerm2，在 Terminal 等其他终端中执行，再重新打开 iTerm2，避免退出时覆盖偏好设置。连接命令和本机工作目录放在本地 Profile 中；应用会保留这些 Profile 和无关偏好。Linux 不安装或配置 iTerm2。
 
 ### Local customization
 
 #### Zsh
 
-Create `~/.zshrc.local` on each machine for local aliases, functions, environment variables, and key bindings. It loads last in interactive shells, so local settings take precedence:
+登录 shell 的本机环境变量和 PATH 放在 `~/.zprofile.local`；交互式 shell 的别名、函数、环境变量和按键绑定放在 `~/.zshrc.local`。两个文件分别在 `.zprofile` 和 `.zshrc` 最后加载，可覆盖对应的共享设置。例如，在 `.zshrc.local` 中添加：
 
 ```zsh
 export EDITOR=nvim
 alias gst='git status --short'
 ```
 
-The file is optional and ignored by Git and chezmoi. Setup and apply neither create nor overwrite it.
+两个文件均可选，在所有支持的平台上生效，Git 和 chezmoi 都会忽略；安装和应用不会创建或覆盖它们。
 
 #### Git
 
-Shared defaults live in `~/.config/git/config`: new repositories use `main`, fetch prunes stale remote branches, pull requires a fast-forward, and Chinese filenames remain readable. Git LFS filters and GitHub / Gist HTTPS credential helpers are configured; `gh` resolves through PATH and requires device authentication.
+共享配置位于 `~/.config/git/config`：新仓库默认使用 `main`，fetch 清理失效远程分支，pull 仅允许快进，中文文件名直接显示。此外配置了 Git LFS 过滤器和 GitHub / Gist HTTPS 凭据助手；`gh` 从 PATH 查找，需要在本机登录。
 
 **Migration and identity**
 
-These paths use Git's default XDG location: `XDG_CONFIG_HOME` must be unset or point to `~/.config`.
+当前配置使用默认 XDG 路径，`XDG_CONFIG_HOME` 必须未设置或指向 `~/.config`。
 
-1. Review and back up existing `~/.gitconfig` and `~/.config/git/config`. Inspect global settings and their sources:
+1. 检查并备份已有 `~/.gitconfig` 和 `~/.config/git/config`，查看全局配置及来源：
 
    ```sh
    env -u GIT_CONFIG -u GIT_CONFIG_GLOBAL -u GIT_CONFIG_PARAMETERS \
@@ -175,12 +119,12 @@ These paths use Git's default XDG location: `XDG_CONFIG_HOME` must be unset or p
      git --git-dir=/dev/null config --includes --list --show-origin
    ```
 
-2. Move device-specific settings into `~/.config/git/config.local`, preserving any settings already there.
-3. Preview `chezmoi diff` before applying. Resolve conflicting entries in `~/.gitconfig` manually; dotfiles do not move or delete that file.
+2. 将本机设置迁移到 `~/.config/git/config.local`，保留其中已有配置。
+3. 先预览 `chezmoi --source "$PWD" diff` 再应用。自行解决 `~/.gitconfig` 中的冲突项，安装脚本不会迁移或删除该文件。
 
-No shared identity is provided. On apply, saved inputs initialize missing `user.name` and `user.email` entries in `config.local`, creating the file if needed. Existing entries (including empty values and entries from included files), unrelated settings, and comments are preserved. `user.useConfigOnly = true` requires an explicitly configured identity for commits.
+仓库不提供共享身份。应用时，只用已保存的输入补齐 `config.local` 中缺失的 `user.name` 和 `user.email`，必要时创建文件。已有字段（包括空值和 include 中的字段）、无关配置及注释都会保留。`user.useConfigOnly = true` 要求提交时有显式身份。
 
-To change this device's Git identity afterward:
+之后可手动修改本机身份：
 
 ```sh
 mkdir -p ~/.config/git
@@ -188,168 +132,29 @@ git config --file ~/.config/git/config.local user.name "Your Name"
 git config --file ~/.config/git/config.local user.email "you@example.com"
 ```
 
-`config.local` loads after shared defaults and can override them. Git and chezmoi exclude it from source management; later applies preserve manual changes. An existing `~/.gitconfig` is read afterward, and repository settings take precedence over these global files.
+`config.local` 在共享配置后加载，可以覆盖共享值；Git 和 chezmoi 不管理该文件，重复应用保留手动修改。已有 `~/.gitconfig` 加载得更晚，仓库级配置的优先级又高于这些全局配置。
 
-**Authentication**
-
-Authenticate separately on each device with [GitHub CLI](https://cli.github.com/manual/gh_auth_login) and [GitLab CLI](https://docs.gitlab.com/cli/auth/login/), selecting the appropriate host and Git transport:
-
-```sh
-gh auth login
-glab auth login
-```
-
-Authentication state stays outside the repository. The shared GitHub helpers apply to HTTPS; SSH authentication remains device-managed.
-
-**Git LFS projects**
-
-Inside each repository that uses LFS, [initialize its hooks and local configuration](https://github.com/git-lfs/git-lfs/blob/main/docs/man/git-lfs-install.adoc), then select the file patterns to track:
-
-```sh
-git lfs install --local
-git lfs track "*.bin"
-git add .gitattributes
-```
-
-Commit `.gitattributes` with the matching files. `--local` keeps project setup from writing global configuration; tracking does not convert existing history.
+认证状态保留在各设备上，不随仓库同步。共享 GitHub 凭据助手用于 HTTPS，需要在本机单独登录；SSH 认证由本机密钥决定。
 
 ### SSH keys
 
-Each apply checks `~/.ssh/id_ed25519` and `~/.ssh/id_ed25519.pub`:
+每次应用都会检查 `~/.ssh/id_ed25519` 和 `~/.ssh/id_ed25519.pub`：
 
-| Existing files   | Behavior                                                  |
-| ---------------- | --------------------------------------------------------- |
-| Neither          | Generate a new Ed25519 key pair.                          |
-| Both             | Preserve the files and their permissions.                 |
-| Private key only | Recover the public key without changing the private key.  |
-| Public key only  | Stop with an error; resolve the incomplete pair manually. |
+| 已有文件 | 行为                                   |
+| -------- | -------------------------------------- |
+| 都不存在 | 生成新的 Ed25519 密钥对                |
+| 两者都有 | 保留文件及其权限                       |
+| 仅有私钥 | 恢复公钥，保留私钥                     |
+| 仅有公钥 | 停止并报错，需要手动处理不完整的密钥对 |
 
-New keys have no passphrase. Their comment uses the email saved under `[data.user]`; if absent or empty, generation omits `-C` and keeps the default `user@hostname` comment. SSH initialization does not query Git. Existing key pairs remain unchanged; public-key recovery uses the comment stored in the private key.
+新密钥不设口令，注释使用 `[data.user]` 保存的邮箱；邮箱缺失或为空时使用默认 `user@hostname`，不查询 Git。恢复公钥沿用私钥中的注释，仅支持 Ed25519，可能询问已有口令；失败时停止应用，不留下公钥文件。
 
-Newly created permissions are `700` for `.ssh`, `600` for the private key, and `644` for the public key. Existing directories, keys at other paths, and their permissions remain unchanged.
+新建 `.ssh`、私钥、公钥的权限分别为 `700`、`600`、`644`。已有目录、其他路径的密钥及权限不变。密钥路径必须是普通文件或指向普通文件的符号链接；目录冲突和悬空链接会导致应用停止，不会被替换。
 
-Key paths must be regular files or symlinks to regular files. Conflicting directories and dangling symlinks stop apply without being replaced.
+密钥仅保存在设备上，不应加入 Git 或 chezmoi 源状态；公钥需自行注册到对应的 Git 托管平台或服务器。
 
-Public-key recovery requires an Ed25519 private key and may prompt for its existing passphrase. If recovery fails, apply stops without creating a public-key file.
+Linux 登录时，若未继承 `SSH_AUTH_SOCK`，会检查并启动或复用 ssh-agent，将环境缓存到 `~/.ssh/ssh-agent`，并尝试加载 `id_ed25519`。已有 agent 环境保持不变。
 
-Keys stay on the device; keep them outside Git and the chezmoi source state. Inspect the public-key fingerprint with:
+## Maintenance
 
-```sh
-ssh-keygen -lf ~/.ssh/id_ed25519.pub
-```
-
-Register the public key with your Git host or servers separately.
-
-## Layout
-
-```text
-.
-├── .chezmoiroot            # Selects home/ as the source root
-├── Brewfile                # Shared Homebrew packages
-├── home/                   # Chezmoi source state
-│   ├── .chezmoi.toml.tmpl  # Local identity initialization
-│   ├── .chezmoiignore      # Deployment exclusions
-│   ├── .chezmoiscripts/    # Chezmoi lifecycle adapters
-│   ├── Library/            # macOS application configuration
-│   ├── dot_config/git/     # Shared Git configuration
-│   ├── dot_zprofile.tmpl   # Login environment
-│   └── dot_zshrc           # Interactive shell
-├── scripts/                # Installation and repository development scripts
-│   ├── dev/                # Repository development helpers
-│   └── install/            # Machine setup
-│       ├── install.sh      # Installation entry point
-│       └── lib/            # Installation and initialization functions
-├── tests/                  # Behavior tests and helpers
-└── .github/workflows/      # CI checks
-```
-
-Chezmoi filename attributes define target paths: for example, `home/dot_zshrc` maps to `~/.zshrc`. Repository documentation, tooling, and `scripts/` stay outside the deployment source.
-
-## Development
-
-### Requirements
-
-| Tool    | Version                  |
-| ------- | ------------------------ |
-| Node.js | `>=22.22.1` (CI uses 22) |
-| pnpm    | `12.3.4`                 |
-| chezmoi | Tested with `2.72.1`     |
-| Zsh     | Tested with `5.9`        |
-
-Install development dependencies from the repository root:
-
-```sh
-pnpm install --frozen-lockfile
-```
-
-### Checks
-
-| Command           | Purpose                                                     |
-| ----------------- | ----------------------------------------------------------- |
-| `pnpm check`      | Run linting, formatting checks, and tests.                  |
-| `pnpm ci:test`    | Run the Linux CI jobs sequentially through act.             |
-| `pnpm test`       | Run the unit and integration suites.                        |
-| `pnpm format`     | Format repository files.                                    |
-| `pnpm test:e2e`   | Run end-to-end tests separately.                            |
-| `pnpm test:setup` | Verify first-time installation in a fresh Ubuntu container. |
-
-CI runs `check` on Ubuntu, plus `test-e2e` and `test-setup` on macOS and Ubuntu. First-time setup uses a fresh Ubuntu container or a disposable GitHub macOS runner.
-
-### Tests
-
-Use [Bats](https://bats-core.readthedocs.io/), installed through pnpm. Prioritize integration tests; add unit tests for meaningful logic and a small number of end-to-end workflows using real dependencies.
-
-| Directory            | Purpose                                             |
-| -------------------- | --------------------------------------------------- |
-| `tests/unit/`        | Isolated function or module behavior.               |
-| `tests/integration/` | Configuration and scripts working with real tools.  |
-| `tests/e2e/`         | Complete setup and shell workflows, run separately. |
-| `tests/helpers/`     | Shared setup and execution functions.               |
-| `tests/fixtures/`    | Fixed inputs; generated files belong in temp dirs.  |
-
-Create directories as needed and name test files after the behavior they cover.
-
-See [tests/README.md](tests/README.md) for suite coverage, execution requirements, and isolation details.
-
-## Conventions
-
-### Configuration
-
-- Chezmoi manages configuration; package managers manage software.
-- Prefer shared configuration. Use templates and built-in chezmoi data for necessary machine differences.
-
-### Shell
-
-- Entry points call functions explicitly; sourcing libraries has no installation side effects.
-- Keep installation idempotent and separate from shell startup.
-- Use `run_before_` adapters to invoke external scripts on every apply. Keep calls one-way; installers must not invoke `chezmoi apply`.
-- Render templates before checking scripts, and test Zsh behavior with Zsh.
-- Zsh files use `zsh -n` syntax checks; exclude them from the Bash-oriented formatter.
-- Base `.zshrc` on the upstream Oh My Zsh template, preserve its structure and examples, and append personal configuration after the examples.
-
-### Testing
-
-- Separate setup, execution, and assertions with blank lines. Comment non-obvious fixture behavior and isolation choices; use readable multiline snippets.
-- Assert exit status, output, and resulting files. Avoid coupling tests to implementation details.
-- Limit third-party tool coverage to installation, configuration integration, basic execution, and preservation across apply. Leave detailed tool behavior to upstream tests.
-- Test real repository copies with isolated home, configuration, cache, and state paths. Leave the checkout and real home untouched.
-- Keep default tests offline and independent of execution order. Use controlled substitutes at external boundaries when needed.
-- Share suites across platforms. Use CI matrices for OS coverage and Bats tags for execution requirements.
-- Keep end-to-end tests outside `pnpm test`. Failures must return a nonzero exit status.
-
-### Changes
-
-- Branches: `<issue>-<type>-<summary>`.
-- Do not commit or push directly to the default branch. Merge changes through pull requests.
-- Commits: English Conventional Commits, `<type>: <summary>`.
-- Keep pull requests focused and run `pnpm check` before requesting review.
-
-### Documentation
-
-- Keep shared project context, usage, and conventions in this README; keep agent-specific instructions in [AGENTS.md](AGENTS.md).
-- Update relevant documentation when behavior, setup, or workflows change.
-
-### Sensitive information
-
-- Keep credentials, private keys, and tokens out of version control.
-- Use placeholders in examples.
+仓库结构、开发环境、检查命令和维护约定见 [CONTRIBUTING.md](CONTRIBUTING.md)。

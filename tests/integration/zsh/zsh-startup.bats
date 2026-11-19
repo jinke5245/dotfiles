@@ -25,6 +25,72 @@ setup() {
   done
 }
 
+@test "Linux login starts and reuses the cached agent and adds the local key" {
+  zsh_sandbox_apply linux amd64
+  mkdir -p "$SANDBOX_HOME/.ssh"
+  printf 'test key\n' > "$SANDBOX_HOME/.ssh/id_ed25519"
+  cat >> "$SANDBOX_HOME/.zshenv" << 'EOF'
+unset SSH_AUTH_SOCK
+ps() { print -r -- '123 ssh-agent -s'; }
+ssh-agent() {
+  [[ "$*" = -s ]] || return 1
+  print -r -- agent-start >> "$ZSH_TEST_TRACE"
+  printf 'SSH_AUTH_SOCK=%q; export SSH_AUTH_SOCK;\necho Agent pid 12345;\n' "$HOME/.ssh/test.sock"
+}
+ssh-add() {
+  if [[ "$*" = -l ]]; then
+    return "$(cat "$HOME/.ssh/agent-status")"
+  fi
+  [[ "$#" = 1 && "$1" = "$HOME/.ssh/id_ed25519" ]] || return 1
+  print -r -- agent-add >> "$ZSH_TEST_TRACE"
+}
+EOF
+
+  local agent_status
+  for agent_status in 2 0 1; do
+    printf '%s\n' "$agent_status" > "$SANDBOX_HOME/.ssh/agent-status"
+    run -0 --separate-stderr sandbox_zsh -lc 'print -r -- "$SSH_AUTH_SOCK"'
+
+    [ "$output" = "$SANDBOX_HOME/.ssh/test.sock" ]
+    [ -z "$stderr" ]
+  done
+  [ "$(grep -c '^agent-start$' "$SANDBOX_ROOT/startup.log")" = 1 ]
+  [ "$(grep -c '^agent-add$' "$SANDBOX_ROOT/startup.log")" = 3 ]
+}
+
+@test "Linux login replaces a stale cached agent even when another agent exists" {
+  zsh_sandbox_apply linux amd64
+  mkdir -p "$SANDBOX_HOME/.ssh"
+  printf 'test key\n' > "$SANDBOX_HOME/.ssh/id_ed25519"
+  printf 'SSH_AUTH_SOCK=%q; export SSH_AUTH_SOCK;\n' \
+    "$SANDBOX_HOME/.ssh/stale.sock" > "$SANDBOX_HOME/.ssh/ssh-agent"
+  cat >> "$SANDBOX_HOME/.zshenv" << 'EOF'
+unset SSH_AUTH_SOCK
+ps() { print -r -- '123 ssh-agent -s'; }
+ssh-agent() {
+  [[ "$*" = -s ]] || return 1
+  print -r -- agent-start >> "$ZSH_TEST_TRACE"
+  printf 'SSH_AUTH_SOCK=%q; export SSH_AUTH_SOCK;\n' "$HOME/.ssh/live.sock"
+}
+ssh-add() {
+  if [[ "$*" = -l ]]; then
+    [[ ${SSH_AUTH_SOCK:-} = "$HOME/.ssh/live.sock" ]] || return 2
+  else
+    [[ "$#" = 1 && "$1" = "$HOME/.ssh/id_ed25519" ]] || return 1
+    [[ ${SSH_AUTH_SOCK:-} = "$HOME/.ssh/live.sock" ]] || return 2
+    print -r -- agent-add >> "$ZSH_TEST_TRACE"
+  fi
+}
+EOF
+
+  run -0 --separate-stderr sandbox_zsh -lc 'print -r -- "$SSH_AUTH_SOCK"'
+
+  [ "$output" = "$SANDBOX_HOME/.ssh/live.sock" ]
+  [ -z "$stderr" ]
+  [ "$(grep -c '^agent-start$' "$SANDBOX_ROOT/startup.log")" = 1 ]
+  [ "$(grep -c '^agent-add$' "$SANDBOX_ROOT/startup.log")" = 1 ]
+}
+
 @test "initializes the login environment before loading configured Oh My Zsh" {
   zsh_fixture_brew "$SANDBOX_ROOT/brew"
   SANDBOX_ZSH_PATH="$SANDBOX_ROOT/brew/bin:$SANDBOX_ZSH_PATH"

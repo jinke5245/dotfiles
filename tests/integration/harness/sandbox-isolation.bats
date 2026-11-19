@@ -29,3 +29,25 @@ load '../../helpers/sandbox.bash'
   [ ! -e "$snapshot/.env" ]
   [ ! -e "$snapshot/.codex" ]
 }
+
+@test "repository snapshots ignore inherited Git directory selection" {
+  local source="$BATS_TEST_TMPDIR/source" external="$BATS_TEST_TMPDIR/external"
+  local snapshot="$BATS_TEST_TMPDIR/snapshot"
+  mkdir -p "$source" "$external" "$BATS_TEST_TMPDIR/home"
+  printf 'source content\n' > "$source/config"
+  printf 'config\n' > "$source/.gitignore"
+  printf 'external content\n' > "$external/unrelated"
+  env -i HOME="$BATS_TEST_TMPDIR/home" PATH="$PATH" GIT_CONFIG_NOSYSTEM=1 \
+    /bin/bash -e -c '
+      git -C "$1" init --quiet
+      git -C "$1" add --force config .gitignore
+      git -C "$2" init --quiet
+      git -C "$2" add unrelated
+    ' _ "$source" "$external"
+
+  GIT_DIR="$external/.git" sandbox_copy_repository "$snapshot" "$source"
+
+  [ -f "$snapshot/config" ]
+  [ "$(cat "$snapshot/config")" = 'source content' ]
+  [ ! -e "$snapshot/unrelated" ]
+}

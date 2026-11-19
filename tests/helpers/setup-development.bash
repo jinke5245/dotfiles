@@ -20,6 +20,9 @@ setup_development_prepare() (
   for tool in go fnm uv uvx; do
     test "$(command -v "$tool")" = "$HOMEBREW_PREFIX/bin/$tool"
   done
+  for tool in rustup rustc cargo; do
+    test "$(command -v "$tool")" = "$HOMEBREW_PREFIX/opt/rustup/bin/$tool"
+  done
   for tool in node corepack pnpm; do
     test "$(command -v "$tool")" = "$FNM_MULTISHELL_PATH/bin/$tool"
   done

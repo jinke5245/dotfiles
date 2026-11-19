@@ -5,6 +5,8 @@ runs:
   using: composite
   steps:
     - shell: bash
-      run: sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin"
+      run: |
+        installer="$(curl -fsLS https://get.chezmoi.io)"
+        sh -c "$installer" -- -b "$HOME/.local/bin"
     - shell: bash
       run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"

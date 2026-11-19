@@ -21,3 +21,28 @@ fi
 typeset -U path PATH
 path=("$HOME/bin" "$HOME/.local/bin" "$HOME/go/bin" /usr/local/bin $path)
 export PATH
+
+{{ if eq .chezmoi.os "linux" }}
+# Reuse or start ssh-agent when no agent is inherited.
+if [ -z "${SSH_AUTH_SOCK:-}" ]; then
+  if [ -f "$HOME/.ssh/ssh-agent" ]; then
+    eval "$(cat "$HOME/.ssh/ssh-agent")" > /dev/null
+  fi
+  SSH_AGENT_STATUS=0
+  ssh-add -l > /dev/null 2>&1 || SSH_AGENT_STATUS=$?
+  # Exit 1 means a live agent without keys; only 2 means it cannot be reached.
+  if [ "$SSH_AGENT_STATUS" = "2" ]; then
+    ssh-agent -s &> "$HOME/.ssh/ssh-agent"
+    eval "$(cat "$HOME/.ssh/ssh-agent")" > /dev/null
+  fi
+
+  if [ -f "$HOME/.ssh/id_ed25519" ]; then
+    ssh-add "$HOME/.ssh/id_ed25519" 2> /dev/null
+  fi
+fi
+{{ end }}
+
+# Load machine-local login overrides after shared configuration.
+if [[ -r "$HOME/.zprofile.local" ]]; then
+  source "$HOME/.zprofile.local"
+fi

@@ -7,6 +7,8 @@ zsh_sandbox_create() {
 }
 
 zsh_sandbox_prepare() {
+  # Keep completion fixtures auditable regardless of the caller's umask.
+  umask 022
   SANDBOX_ZSH="$(command -v zsh)" || {
     printf 'zsh must be available on PATH to run shell tests.\n' >&2
     return 1
@@ -89,6 +91,7 @@ sandbox_zsh() (
     GIT_TERMINAL_PROMPT=0 \
     GIT_ASKPASS=/usr/bin/false \
     GIT_ALLOW_PROTOCOL=file \
+    SSH_AUTH_SOCK="$SANDBOX_ROOT/test-agent.sock" \
     PYTHONDONTWRITEBYTECODE=1 \
     UV_OFFLINE=true \
     UV_PYTHON_DOWNLOADS=never \

@@ -48,11 +48,22 @@ CONFIG
   run -0 git_identity_initialize 'Saved Name' saved@example.invalid
 
   git_assert_local_identity 'Saved Name' saved@example.invalid
-  # Git adds the user section without rewriting the existing configuration.
-  head -n 3 "$SANDBOX_GIT_LOCAL" > "$SANDBOX_ROOT/settings.after"
+  # New defaults precede the original configuration without rewriting it.
+  tail -n 3 "$SANDBOX_GIT_LOCAL" > "$SANDBOX_ROOT/settings.after"
   cmp "$SANDBOX_ROOT/settings.before" "$SANDBOX_ROOT/settings.after"
   run -0 sandbox_git config --file "$SANDBOX_GIT_LOCAL" --get core.editor
   [ "$output" = 'editor --wait' ]
+}
+
+@test "initialization preserves UTF-8 BOM configuration" {
+  printf '\357\273\277# Keep this comment.\n[core]\n editor = vim\n' > "$SANDBOX_GIT_LOCAL"
+
+  run -0 git_identity_initialize 'Saved Name' saved@example.invalid
+
+  [ "$(head -c 3 "$SANDBOX_GIT_LOCAL")" = "$(printf '\357\273\277')" ]
+  git_assert_local_identity 'Saved Name' saved@example.invalid
+  run -0 sandbox_git config --file "$SANDBOX_GIT_LOCAL" --get core.editor
+  [ "$output" = vim ]
 }
 
 @test "initialization preserves identity supplied by an included local file" {
@@ -69,6 +80,24 @@ CONFIG
   cmp "$included" "$SANDBOX_ROOT/included.before"
   [ ! "$SANDBOX_GIT_LOCAL" -nt "$SANDBOX_ROOT/local.before" ]
   [ ! "$included" -nt "$SANDBOX_ROOT/included.before" ]
+}
+
+@test "initialized defaults preserve conditional identity in matching repositories" {
+  local included="$SANDBOX_HOME/.config/git/work.config"
+  sandbox_git config --file "$SANDBOX_GIT_LOCAL" \
+    "includeIf.gitdir:$SANDBOX_GIT_WORKTREE/.path" work.config
+  sandbox_git config --file "$included" user.name 'Work Name'
+  sandbox_git config --file "$included" user.email work@example.invalid
+  cp -p "$included" "$SANDBOX_ROOT/included.before"
+
+  run -0 git_identity_initialize 'Saved Name' saved@example.invalid
+
+  git_assert_local_identity 'Saved Name' saved@example.invalid
+  run -0 sandbox_git -C "$SANDBOX_GIT_WORKTREE" config --get user.name
+  [ "$output" = 'Work Name' ]
+  run -0 sandbox_git -C "$SANDBOX_GIT_WORKTREE" config --get user.email
+  [ "$output" = work@example.invalid ]
+  cmp "$included" "$SANDBOX_ROOT/included.before"
 }
 
 @test "initialization fills only the field absent from included local identity" {
@@ -182,8 +211,36 @@ CONFIG
   [ "$(cat "$SANDBOX_GIT_LOCAL.lock")" = 'existing lock' ]
 }
 
+@test "initialization keeps temporary configuration private" {
+  umask 022
+  # Observe permissions after copying local content, before restoring its mode.
+  cat > "$SANDBOX_ROOT/bin/chmod" << 'WRAPPER'
+#!/usr/bin/env bash
+lock="$HOME/.config/git/config.local.lock"
+{ stat -c '%a' "$lock" 2> /dev/null || stat -f '%Lp' "$lock"; } > "$HOME/lock.mode"
+exec /bin/chmod "$@"
+WRAPPER
+  chmod +x "$SANDBOX_ROOT/bin/chmod"
+
+  local mode actual
+  for mode in 600 640; do
+    printf '[core]\n editor = private-fixture\n' > "$SANDBOX_GIT_LOCAL"
+    chmod "$mode" "$SANDBOX_GIT_LOCAL"
+
+    run -0 git_identity_initialize 'Saved Name' saved@example.invalid
+
+    [ "$(cat "$SANDBOX_HOME/lock.mode")" = 600 ]
+    actual="$(stat -c '%a' "$SANDBOX_GIT_LOCAL" 2> /dev/null)" || actual="$(stat -f '%Lp' "$SANDBOX_GIT_LOCAL")"
+    [ "$actual" = "$mode" ]
+    git_assert_local_identity 'Saved Name' saved@example.invalid
+    run -0 sandbox_git config --file "$SANDBOX_GIT_LOCAL" --get core.editor
+    [ "$output" = private-fixture ]
+  done
+}
+
 @test "initialization follows a valid local file symlink without replacing it" {
   printf '# keep\n' > "$SANDBOX_ROOT/linked.config"
+  chmod 600 "$SANDBOX_ROOT/linked.config"
   ln -s "$SANDBOX_ROOT/linked.config" "$SANDBOX_GIT_LOCAL"
 
   run -0 git_identity_initialize 'Saved Name' saved@example.invalid
@@ -192,4 +249,7 @@ CONFIG
   git_assert_local_identity 'Saved Name' saved@example.invalid
   run -0 sandbox_git config --file "$SANDBOX_ROOT/linked.config" --get user.name
   [ "$output" = 'Saved Name' ]
+  local mode
+  mode="$(stat -c '%a' "$SANDBOX_ROOT/linked.config" 2> /dev/null)" || mode="$(stat -f '%Lp' "$SANDBOX_ROOT/linked.config")"
+  [ "$mode" = 600 ]
 }

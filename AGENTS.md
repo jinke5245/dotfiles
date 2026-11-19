@@ -2,8 +2,8 @@
 
 ## Context
 
-- Read [README.md](README.md) at the start of each new conversation for shared project context and conventions.
-- Reuse that context throughout the conversation; do not reread the README before every change.
+- Read [README.md](README.md) for repository usage and [CONTRIBUTING.md](CONTRIBUTING.md) for development and maintenance at the start of each new conversation.
+- Reuse that context throughout the conversation; do not reread these documents before every change.
 
 ## Scope and workspace
 

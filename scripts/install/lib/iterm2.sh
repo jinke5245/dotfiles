@@ -31,7 +31,7 @@ configure_iterm2() {
       <key>Version</key><integer>1</integer>
       <key>Keycode</key><integer>13</integer>
       <key>Action</key><integer>12</integer>
-      <key>Text</key><string>\\n</string>
+      <key>Text</key><string>\n</string>
       <key>Modifiers</key><integer>131072</integer>
     </dict>' || return
 

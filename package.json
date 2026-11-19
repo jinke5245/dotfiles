@@ -1,5 +1,4 @@
 {
-  "name": "@jinke5245/dotfiles",
   "engines": {
     "node": ">=22.22.1"
   },
@@ -34,13 +33,12 @@
     "format:fix:prettier": "prettier --write .",
     "format:check": "run-s format:check:*",
     "format:check:prettier": "prettier --check .",
-    "test": "run-s test:unit test:integration",
-    "test:unit": "echo \"No unit tests\"",
+    "test": "run-s test:integration",
     "test:integration": "bats --recursive --print-output-on-failure tests/integration",
     "test:e2e": "bats --recursive --filter-tags '!network' --print-output-on-failure tests/e2e",
     "test:setup": "bats --recursive --filter-tags network,container --print-output-on-failure tests/e2e",
     "test:setup:macos": "bats --recursive --filter-tags network,macos --print-output-on-failure tests/e2e",
-    "ci:run": "bash scripts/dev/run-if-available.sh act workflow_dispatch",
+    "ci:run": "bash scripts/dev/run-if-available.sh act workflow_dispatch --container-options=--group-add=0",
     "ci:test": "run-s ci:test:*",
     "ci:test:check": "pnpm ci:run --job check",
     "ci:test:test-e2e": "pnpm ci:run --job test-e2e --matrix os:ubuntu-latest",

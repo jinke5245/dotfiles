@@ -134,9 +134,15 @@ fi
 
 ################################################################################
 #
-# Personal additions
+# Shared configuration
 #
 ################################################################################
+
+# rustup: expose Homebrew's keg-only shims without invoking them.
+if [[ -n ${HOMEBREW_PREFIX:-} && -d "$HOMEBREW_PREFIX/opt/rustup/bin" ]]; then
+  typeset -U path PATH
+  path=("$HOMEBREW_PREFIX/opt/rustup/bin" $path)
+fi
 
 # fnm: initialize Node.js version switching and register completion after Oh My Zsh.
 if (( $+commands[fnm] )); then

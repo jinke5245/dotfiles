@@ -27,7 +27,8 @@ sandbox_copy_repository() {
   # Copy current contents, including new files, without ignored local data.
   (
     set -o pipefail
-    git -C "$project_root" ls-files --cached --others --exclude-standard -z \
+    env -i HOME="$BATS_TEST_TMPDIR" PATH="$PATH" GIT_CONFIG_NOSYSTEM=1 \
+      git -C "$project_root" ls-files --cached --others --exclude-standard -z \
       | while IFS= read -r -d '' file; do
         # Deleted tracked files remain in the index until staged.
         if [ -e "$project_root/$file" ] || [ -L "$project_root/$file" ]; then

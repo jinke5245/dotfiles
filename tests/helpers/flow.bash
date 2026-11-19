@@ -18,8 +18,10 @@ flow_suite_setup() {
 
   # Snapshot committed upstream files once; the real installer fetches this local
   # repository. Neither local customizations nor changes to the source are needed.
-  git -c init.defaultBranch=master init --bare --quiet "$BATS_FILE_TMPDIR/ohmyzsh.git"
-  git -C "$BATS_FILE_TMPDIR/ohmyzsh.git" fetch --quiet --depth=1 \
+  env -i HOME="$BATS_FILE_TMPDIR" PATH="$PATH" GIT_CONFIG_NOSYSTEM=1 \
+    git -c init.defaultBranch=master init --bare --quiet "$BATS_FILE_TMPDIR/ohmyzsh.git" || return
+  env -i HOME="$BATS_FILE_TMPDIR" PATH="$PATH" GIT_CONFIG_NOSYSTEM=1 GIT_ALLOW_PROTOCOL=file \
+    git -C "$BATS_FILE_TMPDIR/ohmyzsh.git" fetch --quiet --depth=1 \
     "$OMZ_SOURCE" HEAD:refs/heads/master
 }
 
@@ -44,15 +46,19 @@ flow_sandbox_create() {
     chmod +x "$SANDBOX_ROOT/bin/$command"
   done
 
-  git -C "$BATS_FILE_TMPDIR/ohmyzsh.git" show master:tools/install.sh \
+  env -i HOME="$SANDBOX_HOME" PATH="$SANDBOX_PATH" GIT_CONFIG_NOSYSTEM=1 \
+    git -C "$BATS_FILE_TMPDIR/ohmyzsh.git" show master:tools/install.sh \
     > "$SANDBOX_HOME/.test-upstream/install.sh"
 
   # Rewrite only the upstream fetch URL inside this temporary HOME. Git runs for
   # real, but all network protocols are disabled for the installation and shells.
-  git config --file "$SANDBOX_HOME/.gitconfig" \
+  env -i HOME="$SANDBOX_HOME" PATH="$SANDBOX_PATH" GIT_CONFIG_NOSYSTEM=1 \
+    git config --file "$SANDBOX_HOME/.gitconfig" \
     "url.file://$BATS_FILE_TMPDIR/ohmyzsh.git.insteadOf" https://github.com/ohmyzsh/ohmyzsh.git
-  git config --file "$SANDBOX_HOME/.gitconfig" protocol.allow never
-  git config --file "$SANDBOX_HOME/.gitconfig" protocol.file.allow always
+  env -i HOME="$SANDBOX_HOME" PATH="$SANDBOX_PATH" GIT_CONFIG_NOSYSTEM=1 \
+    git config --file "$SANDBOX_HOME/.gitconfig" protocol.allow never
+  env -i HOME="$SANDBOX_HOME" PATH="$SANDBOX_PATH" GIT_CONFIG_NOSYSTEM=1 \
+    git config --file "$SANDBOX_HOME/.gitconfig" protocol.file.allow always
 
   FLOW_BREW_PREFIX="$(env -i HOME="$SANDBOX_HOME" PATH="$SANDBOX_PATH" brew --prefix)"
 

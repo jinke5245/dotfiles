@@ -23,6 +23,7 @@ setup() {
   [ ! -e "$SANDBOX_HOME/.config/git/config.local" ]
 
   cp "$SANDBOX_REPOSITORY/tests/fixtures/zsh/local.zsh" "$SANDBOX_HOME/.zshrc.local"
+  printf 'export DOTFILES_TEST_LOGIN_LOCAL=loaded\n' > "$SANDBOX_HOME/.zprofile.local"
   development_flow_prepare "$SANDBOX_HOME" "$SANDBOX_ROOT/development.before"
 
   run -0 sandbox_chezmoi apply
@@ -35,6 +36,7 @@ setup() {
   # Start the deployed configuration with real dependencies and local overrides.
   run -0 sandbox_zsh -lic '
     [[ $HOMEBREW_PREFIX = "$1" ]] &&
+    [[ $DOTFILES_TEST_LOGIN_LOCAL = loaded ]] &&
     [[ $ZSH_THEME = robbyrussell ]] &&
     [[ ${aliases[gst]} = "git status --short" ]] &&
     [[ $EDITOR = nvim ]] &&
@@ -48,6 +50,7 @@ setup() {
 
   # Keep manual identity edits, framework customization, and development state.
   run -0 sandbox_zsh -lc '
+    [[ $DOTFILES_TEST_LOGIN_LOCAL = loaded ]] &&
     git config --file "$HOME/.config/git/config.local" user.name "Manual Name" &&
     git config --file "$HOME/.config/git/config.local" user.email manual@example.invalid
   '
@@ -56,6 +59,7 @@ setup() {
   local file before
   local files=(
     .zprofile
+    .zprofile.local
     .zshrc
     .zshrc.local
     .oh-my-zsh/oh-my-zsh.sh
@@ -89,6 +93,7 @@ setup() {
   development_flow_check "$SANDBOX_HOME" "$SANDBOX_ROOT/development.before"
 
   run -0 sandbox_zsh -lic '
+    [[ $DOTFILES_TEST_LOGIN_LOCAL = loaded ]] &&
     [[ $(git config --get user.name) = "Manual Name" ]] &&
     [[ $(git config --get user.email) = manual@example.invalid ]] &&
     [[ $EDITOR = nvim ]] &&

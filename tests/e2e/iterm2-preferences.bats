@@ -50,7 +50,7 @@ setup() {
   run -0 defaults read "$preferences" TabStyleWithAutomaticOption
   [ "$output" = 5 ]
   run -0 plutil -extract GlobalKeyMap.0xd-0x20000-0x24.Text raw -o - "$preferences.plist"
-  [ "$output" = '\\n' ]
+  [ "$output" = '\n' ]
 
   for key in 'New Bookmarks' GlobalKeyMap.local PointerActions.local; do
     plutil -extract "$key" xml1 -o "$SANDBOX_ROOT/$key.after" "$preferences.plist"
