@@ -3,7 +3,7 @@
 # The child shell reads the isolated HOME and sources the repository copy.
 # shellcheck disable=SC2016
 
-load '../helpers/sandbox.bash'
+load '../../support/helpers/sandbox.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0
@@ -37,7 +37,7 @@ setup() {
   # Run the real library twice with native macOS tools; no package installation or GUI.
   for _ in 1 2; do
     run -0 env -i HOME="$SANDBOX_HOME" PATH=/usr/bin:/bin /bin/bash -eu -c '
-      source "$1/scripts/lib/iterm2.sh"
+      source "$1/scripts/install/lib/iterm2.sh"
       configure_iterm2 "$2"
     ' _ "$SANDBOX_REPOSITORY" "$profile"
   done
@@ -50,7 +50,7 @@ setup() {
   run -0 defaults read "$preferences" TabStyleWithAutomaticOption
   [ "$output" = 5 ]
   run -0 plutil -extract GlobalKeyMap.0xd-0x20000-0x24.Text raw -o - "$preferences.plist"
-  [ "$output" = '\\n' ]
+  [ "$output" = '\n' ]
 
   for key in 'New Bookmarks' GlobalKeyMap.local PointerActions.local; do
     plutil -extract "$key" xml1 -o "$SANDBOX_ROOT/$key.after" "$preferences.plist"

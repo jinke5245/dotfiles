@@ -3,8 +3,8 @@
 # Shell snippets expand only in the isolated Zsh process.
 # shellcheck disable=SC2016
 
-load '../../helpers/sandbox.bash'
-load '../../helpers/zsh.bash'
+load '../../support/helpers/sandbox.bash'
+load '../../support/helpers/zsh.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0
@@ -29,7 +29,7 @@ setup() {
 }
 
 @test "local aliases, functions, environment, and key bindings take effect after shared defaults" {
-  cp "$SANDBOX_REPOSITORY/tests/fixtures/zsh/local.zsh" "$SANDBOX_HOME/.zshrc.local"
+  cp "$SANDBOX_REPOSITORY/tests/support/fixtures/zsh/local.zsh" "$SANDBOX_HOME/.zshrc.local"
 
   local mode
   for mode in -lic -ic; do
@@ -69,7 +69,7 @@ setup() {
 }
 
 @test "repeated apply preserves local configuration even when a source copy exists" {
-  cp "$SANDBOX_REPOSITORY/tests/fixtures/zsh/local.zsh" "$SANDBOX_HOME/.zshrc.local"
+  cp "$SANDBOX_REPOSITORY/tests/support/fixtures/zsh/local.zsh" "$SANDBOX_HOME/.zshrc.local"
   touch -t 200001010000 "$SANDBOX_HOME/.zshrc.local"
   cp -p "$SANDBOX_HOME/.zshrc.local" "$SANDBOX_ROOT/local.before"
   # An accidental source copy must not take ownership of the machine's file.

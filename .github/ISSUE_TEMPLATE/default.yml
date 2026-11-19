@@ -1,0 +1,29 @@
+name: Default issue
+description: 描述问题、改进或维护需求
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: 简述背景、当前问题及影响，让读者理解为什么需要这项工作。
+      placeholder: 背景、问题与期望结果
+    validations:
+      required: true
+  - type: textarea
+    id: goals
+    attributes:
+      label: Goals
+      description: 列出本次要达成的目标，不展开具体实现步骤。
+      placeholder: |
+        - 本次目标
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: 通常保留 1–3 项，只包含关键、可验证的结果，避免罗列实现步骤和通用检查。
+      placeholder: |
+        - [ ] 关键验收结果
+    validations:
+      required: true

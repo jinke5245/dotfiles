@@ -3,15 +3,21 @@
 zsh_fixture_development() {
   local prefix="$1" command
   mkdir -p "$prefix/bin" "$SANDBOX_HOME/.fnm-test/multishell/bin"
-  cp "$SANDBOX_REPOSITORY/tests/fixtures/zsh/fnm.bash" "$prefix/bin/fnm"
+  cp "$SANDBOX_REPOSITORY/tests/support/fixtures/zsh/fnm.bash" "$prefix/bin/fnm"
   chmod +x "$prefix/bin/fnm"
 
   # A startup-time runtime or package-manager invocation must be visible.
   for command in node npm corepack pnpm go uv uvx; do
-    cp "$SANDBOX_REPOSITORY/tests/fixtures/zsh/runtime-command.bash" "$prefix/bin/$command"
+    cp "$SANDBOX_REPOSITORY/tests/support/fixtures/zsh/runtime-command.bash" "$prefix/bin/$command"
     chmod +x "$prefix/bin/$command"
   done
   cp "$prefix/bin/node" "$SANDBOX_HOME/.fnm-test/multishell/bin/node"
+
+  mkdir -p "$prefix/opt/rustup/bin"
+  for command in rustup rustc cargo; do
+    cp "$SANDBOX_REPOSITORY/tests/support/fixtures/zsh/runtime-command.bash" "$prefix/opt/rustup/bin/$command"
+    chmod +x "$prefix/opt/rustup/bin/$command"
+  done
 
   zsh_fixture_uv_completions "$prefix"
 }

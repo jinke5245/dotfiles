@@ -7,6 +7,8 @@ zsh_sandbox_create() {
 }
 
 zsh_sandbox_prepare() {
+  # Keep completion fixtures auditable regardless of the caller's umask.
+  umask 022
   SANDBOX_ZSH="$(command -v zsh)" || {
     printf 'zsh must be available on PATH to run shell tests.\n' >&2
     return 1
@@ -45,13 +47,13 @@ zsh_sandbox_apply() {
 zsh_fixture_brew() {
   local prefix="$1"
   mkdir -p "$prefix/bin" "$prefix/sbin"
-  cp "$SANDBOX_REPOSITORY/tests/fixtures/zsh/brew.bash" "$prefix/bin/brew"
+  cp "$SANDBOX_REPOSITORY/tests/support/fixtures/zsh/brew.bash" "$prefix/bin/brew"
   chmod +x "$prefix/bin/brew"
 }
 
 zsh_fixture_oh_my_zsh() {
   mkdir -p "$SANDBOX_HOME/.oh-my-zsh"
-  cp "$SANDBOX_REPOSITORY/tests/fixtures/zsh/oh-my-zsh.zsh" \
+  cp "$SANDBOX_REPOSITORY/tests/support/fixtures/zsh/oh-my-zsh.zsh" \
     "$SANDBOX_HOME/.oh-my-zsh/oh-my-zsh.sh"
 }
 
@@ -63,11 +65,11 @@ zsh_fixture_plugins() {
 
   # Homebrew exposes autojump through its shell-selecting profile entry point.
   mkdir -p "$prefix/etc/profile.d"
-  cp "$SANDBOX_REPOSITORY/tests/fixtures/zsh/plugin.zsh" "$prefix/etc/profile.d/autojump.sh"
+  cp "$SANDBOX_REPOSITORY/tests/support/fixtures/zsh/plugin.zsh" "$prefix/etc/profile.d/autojump.sh"
 
   for plugin in zsh-autosuggestions zsh-syntax-highlighting zsh-history-substring-search; do
     mkdir -p "$prefix/share/$plugin"
-    cp "$SANDBOX_REPOSITORY/tests/fixtures/zsh/plugin.zsh" "$prefix/share/$plugin/$plugin.zsh"
+    cp "$SANDBOX_REPOSITORY/tests/support/fixtures/zsh/plugin.zsh" "$prefix/share/$plugin/$plugin.zsh"
   done
 }
 
@@ -89,6 +91,7 @@ sandbox_zsh() (
     GIT_TERMINAL_PROMPT=0 \
     GIT_ASKPASS=/usr/bin/false \
     GIT_ALLOW_PROTOCOL=file \
+    SSH_AUTH_SOCK="$SANDBOX_ROOT/test-agent.sock" \
     PYTHONDONTWRITEBYTECODE=1 \
     UV_OFFLINE=true \
     UV_PYTHON_DOWNLOADS=never \

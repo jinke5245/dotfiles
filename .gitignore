@@ -5,10 +5,7 @@
 ################################################################################
 
 # machine-local configuration
-.config/git/config.local
-.zshrc.local
-home/dot_zshrc.local
-home/dot_config/git/config.local
+*.local
 
 ################################################################################
 #

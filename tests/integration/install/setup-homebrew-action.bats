@@ -3,9 +3,9 @@
 # Bats isolates tests; the execution helper reads each scenario's PATH.
 # shellcheck disable=SC2030,SC2031
 
-load '../../helpers/sandbox.bash'
-load '../../helpers/install.bash'
-load '../../helpers/homebrew-action.bash'
+load '../../support/helpers/sandbox.bash'
+load '../../support/helpers/install.bash'
+load '../../support/helpers/homebrew-action.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0

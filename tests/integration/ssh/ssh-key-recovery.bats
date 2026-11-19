@@ -3,8 +3,8 @@
 # Shell snippets expand their arguments in the isolated child process.
 # shellcheck disable=SC2016
 
-load '../../helpers/sandbox.bash'
-load '../../helpers/ssh.bash'
+load '../../support/helpers/sandbox.bash'
+load '../../support/helpers/ssh.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0
@@ -26,7 +26,7 @@ setup() {
     umask 077
     source "$1"
     initialize_ssh_keys changed@example.invalid
-  ' _ "$SANDBOX_REPOSITORY/scripts/lib/ssh.sh"
+  ' _ "$SANDBOX_REPOSITORY/scripts/install/lib/ssh.sh"
 
   ssh_assert_preserved "$SANDBOX_SSH_KEY" "$SANDBOX_ROOT/private.before"
   [ "$(ssh_file_mode "$SANDBOX_SSH_KEY.pub")" = 644 ]
@@ -45,13 +45,13 @@ setup() {
   ssh_fixture_key 'dotfiles test passphrase'
   rm "$SANDBOX_SSH_KEY.pub"
   cp -p "$SANDBOX_SSH_KEY" "$SANDBOX_ROOT/private.before"
-  cp "$SANDBOX_REPOSITORY/tests/fixtures/ssh/askpass.bash" "$SANDBOX_ROOT/askpass"
+  cp "$SANDBOX_REPOSITORY/tests/support/fixtures/ssh/askpass.bash" "$SANDBOX_ROOT/askpass"
   chmod +x "$SANDBOX_ROOT/askpass"
 
   # Only the human input boundary is substituted; key decryption remains real.
   run -0 ssh_sandbox_run env SSH_ASKPASS="$SANDBOX_ROOT/askpass" \
     /bin/bash -c 'source "$1" && initialize_ssh_keys changed@example.invalid' _ \
-    "$SANDBOX_REPOSITORY/scripts/lib/ssh.sh"
+    "$SANDBOX_REPOSITORY/scripts/install/lib/ssh.sh"
 
   ssh_assert_preserved "$SANDBOX_SSH_KEY" "$SANDBOX_ROOT/private.before"
   [ "$(ssh_file_mode "$SANDBOX_SSH_KEY.pub")" = 644 ]

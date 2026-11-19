@@ -1,4 +1,7 @@
 {
+  "[ignore]": {
+    "editor.defaultFormatter": "foxundermoon.shell-format"
+  },
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "files.associations": {
     "*.sh.tmpl": "shellscript",

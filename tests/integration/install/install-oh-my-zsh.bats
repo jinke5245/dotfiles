@@ -3,8 +3,8 @@
 # The child shell, not Bats, expands the sourced library path.
 # shellcheck disable=SC2016
 
-load '../../helpers/sandbox.bash'
-load '../../helpers/install.bash'
+load '../../support/helpers/sandbox.bash'
+load '../../support/helpers/install.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0
@@ -50,7 +50,7 @@ setup() {
     ZSH="$SANDBOX_HOME/elsewhere" \
     ZDOTDIR="$SANDBOX_HOME/elsewhere" \
     /bin/bash -c 'source "$1" && install_oh_my_zsh' _ \
-    "$SANDBOX_REPOSITORY/scripts/lib/oh-my-zsh.sh"
+    "$SANDBOX_REPOSITORY/scripts/install/lib/oh-my-zsh.sh"
 
   [ -f "$SANDBOX_HOME/.oh-my-zsh/oh-my-zsh.sh" ]
   [ ! -e "$SANDBOX_HOME/elsewhere" ]

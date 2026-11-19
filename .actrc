@@ -1,4 +1,3 @@
 --platform=ubuntu-latest=ghcr.io/catthehacker/ubuntu:runner-24.04
---container-options=--group-add=0
 --workflows=.github/workflows/ci.yml
 --rm

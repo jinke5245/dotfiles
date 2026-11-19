@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
-load '../../helpers/sandbox.bash'
-load '../../helpers/install.bash'
+load '../../support/helpers/sandbox.bash'
+load '../../support/helpers/install.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0
@@ -21,7 +21,7 @@ setup() {
   guid="$(node -p 'JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).Profiles[0].Guid' "$profile")"
 
   [ "$(cat "$SANDBOX_HOME/.install-test/defaults/Default Bookmark Guid")" = "$(printf '%s\n' -string "$guid")" ]
-  [ -s "$SANDBOX_HOME/.install-test/defaults/GlobalKeyMap" ]
+  [[ "$(cat "$SANDBOX_HOME/.install-test/defaults/GlobalKeyMap")" == *'<key>Text</key><string>\n</string>'* ]] || return 1
   [ -s "$SANDBOX_HOME/.install-test/defaults/CopySelection" ]
   [ -s "$SANDBOX_HOME/.install-test/defaults/TabStyleWithAutomaticOption" ]
 }

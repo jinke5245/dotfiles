@@ -3,8 +3,8 @@
 # Shell snippets expand in Zsh; Bats isolates each scenario's PATH.
 # shellcheck disable=SC2016,SC2030,SC2031
 
-load '../../helpers/sandbox.bash'
-load '../../helpers/zsh.bash'
+load '../../support/helpers/sandbox.bash'
+load '../../support/helpers/zsh.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0
@@ -19,7 +19,7 @@ setup() {
 }
 
 @test "discovers extra completions before Oh My Zsh initializes completion" {
-  cat "$SANDBOX_REPOSITORY/tests/fixtures/zsh/completion.zsh" \
+  cat "$SANDBOX_REPOSITORY/tests/support/fixtures/zsh/completion.zsh" \
     >> "$SANDBOX_HOME/.oh-my-zsh/oh-my-zsh.sh"
 
   run -0 sandbox_zsh -lic 'print -r -- "${_comps[dotfiles-test]:-missing}"'
@@ -34,7 +34,7 @@ setup() {
   # Mirror the CI runner: a writable shared prefix, with secure formula files.
   ln -s ../opt/zsh-completions/share/zsh-completions "$SANDBOX_ROOT/brew/share/zsh-completions"
   chmod g+w "$SANDBOX_ROOT/brew/share"
-  cat "$SANDBOX_REPOSITORY/tests/fixtures/zsh/completion.zsh" \
+  cat "$SANDBOX_REPOSITORY/tests/support/fixtures/zsh/completion.zsh" \
     >> "$SANDBOX_HOME/.oh-my-zsh/oh-my-zsh.sh"
 
   run -0 sandbox_zsh -lic 'compaudit && print -r -- "${_comps[dotfiles-test]:-missing}"'
@@ -65,8 +65,8 @@ setup() {
 
 @test "interactive shells without Homebrew still load Oh My Zsh and local overrides" {
   SANDBOX_ZSH_PATH=/usr/bin:/bin
-  cat "$SANDBOX_REPOSITORY/tests/fixtures/zsh/source-within-home.zsh" >> "$SANDBOX_HOME/.zshenv"
-  cp "$SANDBOX_REPOSITORY/tests/fixtures/zsh/local.zsh" "$SANDBOX_HOME/.zshrc.local"
+  cat "$SANDBOX_REPOSITORY/tests/support/fixtures/zsh/source-within-home.zsh" >> "$SANDBOX_HOME/.zshenv"
+  cp "$SANDBOX_REPOSITORY/tests/support/fixtures/zsh/local.zsh" "$SANDBOX_HOME/.zshrc.local"
 
   local mode
   for mode in -lic -ic; do
@@ -86,7 +86,7 @@ setup() {
 
 @test "an empty prefix and failed Homebrew lookup leave interactive startup quiet" {
   printf 'export HOMEBREW_PREFIX=\n' >> "$SANDBOX_HOME/.zshenv"
-  cat "$SANDBOX_REPOSITORY/tests/fixtures/zsh/source-within-home.zsh" >> "$SANDBOX_HOME/.zshenv"
+  cat "$SANDBOX_REPOSITORY/tests/support/fixtures/zsh/source-within-home.zsh" >> "$SANDBOX_HOME/.zshenv"
   printf '#!/bin/sh\nexit 1\n' > "$SANDBOX_ROOT/brew/bin/brew"
 
   run -0 --separate-stderr sandbox_zsh -ic '[[ -z ${HOMEBREW_PREFIX:-} ]] && print -r -- ready'

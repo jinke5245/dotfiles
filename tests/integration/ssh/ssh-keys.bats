@@ -5,8 +5,8 @@
 # Each Bats case has its own sandbox; overrides are intentionally local to it.
 # shellcheck disable=SC2030,SC2031
 
-load '../../helpers/sandbox.bash'
-load '../../helpers/ssh.bash'
+load '../../support/helpers/sandbox.bash'
+load '../../support/helpers/ssh.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0
@@ -18,7 +18,7 @@ setup() {
 
 @test "sourcing the SSH library does not create keys or directories" {
   run -0 ssh_sandbox_run /bin/bash -c 'source "$1"' _ \
-    "$SANDBOX_REPOSITORY/scripts/lib/ssh.sh"
+    "$SANDBOX_REPOSITORY/scripts/install/lib/ssh.sh"
 
   [ -z "$output" ]
   [ ! -e "$SANDBOX_HOME/.ssh" ]
@@ -68,7 +68,7 @@ setup() {
       }
       source "$1"
       initialize_ssh_keys "$2"
-    ' _ "$SANDBOX_REPOSITORY/scripts/lib/ssh.sh" "$email"
+    ' _ "$SANDBOX_REPOSITORY/scripts/install/lib/ssh.sh" "$email"
 
     [ ! -e "$SANDBOX_HOME/git-queried" ]
     ssh_assert_key_pair
@@ -87,7 +87,7 @@ setup() {
       umask "$1"
       source "$2"
       initialize_ssh_keys
-    ' _ "$mask" "$SANDBOX_REPOSITORY/scripts/lib/ssh.sh"
+    ' _ "$mask" "$SANDBOX_REPOSITORY/scripts/install/lib/ssh.sh"
 
     [ "$(ssh_file_mode "$SANDBOX_HOME/.ssh")" = 700 ]
     [ "$(ssh_file_mode "$SANDBOX_SSH_KEY")" = 600 ]

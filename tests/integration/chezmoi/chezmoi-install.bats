@@ -3,8 +3,8 @@
 # These snippets expand in the isolated child shell, not in Bats.
 # shellcheck disable=SC2016
 
-load '../../helpers/sandbox.bash'
-load '../../helpers/install.bash'
+load '../../support/helpers/sandbox.bash'
+load '../../support/helpers/install.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0
@@ -22,7 +22,7 @@ setup() {
       source "$1/lib/git.sh" &&
       source "$1/lib/ssh.sh" &&
       source "$1/lib/iterm2.sh"
-  ' _ "$SANDBOX_REPOSITORY/scripts"
+  ' _ "$SANDBOX_REPOSITORY/scripts/install"
 
   [ -z "$output" ]
   [ ! -e "$SANDBOX_HOME/.install-test/download.log" ]
@@ -112,7 +112,7 @@ EOF
   sandbox_chezmoi apply
 
   # A changed dependency check must run even though the adapter is unchanged.
-  cat >> "$SANDBOX_REPOSITORY/scripts/lib/oh-my-zsh.sh" << 'EOF'
+  cat >> "$SANDBOX_REPOSITORY/scripts/install/lib/oh-my-zsh.sh" << 'EOF'
 install_oh_my_zsh() {
   printf 'library changed\n' >&2
   return 7
@@ -124,7 +124,7 @@ EOF
   [[ "$output" == *'library changed'* ]] || return 1
 
   # Replacing the entry point must also take effect without changing the adapter.
-  cat > "$SANDBOX_REPOSITORY/scripts/install.sh" << 'EOF'
+  cat > "$SANDBOX_REPOSITORY/scripts/install/install.sh" << 'EOF'
 #!/bin/bash
 printf 'entry changed\n' >&2
 exit 8
