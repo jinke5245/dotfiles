@@ -37,6 +37,12 @@ setup_macos_create() {
         uninstaller="$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)"
         /bin/bash -c "$uninstaller" -- --force --skip-cache-and-logs --path "$prefix"
       fi
+      # The uninstaller can leave preinstalled completion links behind.
+      for completion in "$prefix/share/zsh/site-functions"/*; do
+        if [[ -L "$completion" && ! -e "$completion" ]]; then
+          rm -- "$completion"
+        fi
+      done
     done
     test ! -x /opt/homebrew/bin/brew
     test ! -x /usr/local/bin/brew

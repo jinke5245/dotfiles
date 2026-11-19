@@ -29,16 +29,18 @@ flow_sandbox_create() {
   sandbox_create
   zsh_sandbox_prepare
 
-  local real_brew brew_directory
+  local real_brew brew_directory brew_cache
   real_brew="$(command -v brew)"
   brew_directory="$(dirname "$real_brew")"
   SANDBOX_PATH="$SANDBOX_ROOT/bin:$brew_directory:/usr/bin:/bin"
   SANDBOX_ZSH_PATH="$SANDBOX_PATH"
-  mkdir -p "$SANDBOX_ROOT/bin" "$SANDBOX_HOME/.test-upstream"
+  mkdir -p "$SANDBOX_ROOT/bin" "$SANDBOX_HOME/.test-upstream/homebrew-cache"
 
   # Keep the real Homebrew in place, but permit only read-only calls through the
   # adapter. The installer may check dependencies without changing host packages.
   printf '%s\n' "$real_brew" > "$SANDBOX_HOME/.test-upstream/brew-path"
+  brew_cache="$("$real_brew" --cache)" || return
+  cp -R "$brew_cache/api" "$SANDBOX_HOME/.test-upstream/homebrew-cache/api" || return
   ln -s "$SANDBOX_ZSH" "$SANDBOX_ROOT/bin/zsh"
   local command
   for command in brew curl; do

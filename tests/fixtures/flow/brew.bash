@@ -4,8 +4,7 @@ set -eu
 
 real_brew="$(cat "$HOME/.test-upstream/brew-path")"
 export HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_ANALYTICS=1
-# A fresh sandbox has no API cache; checks must use installed formula metadata.
-export HOMEBREW_NO_INSTALL_FROM_API=1
+export HOMEBREW_CACHE="$HOME/.test-upstream/homebrew-cache"
 
 # The real setup suites own package installation; offline E2E only checks it.
 if [ "$#" -eq 4 ] && [ "$1" = bundle ] && [ "$2" = install ] \
@@ -22,7 +21,16 @@ if [ "$#" -eq 4 ] && [ "$1" = bundle ] && [ "$2" = install ] \
     exit 1
   fi
 
-  if "$real_brew" bundle check "$3" --no-upgrade; then
+  # API mode recognizes installed casks without requiring a Homebrew cask tap.
+  if [ ! -d "$HOMEBREW_CACHE/api" ]; then
+    printf 'E2E: a prepared Homebrew API cache is required; run setup in an isolated environment first.\n' >&2
+    exit 1
+  fi
+  # Fail closed if an incompatible or corrupt cache triggers a download fallback.
+  export HOMEBREW_CURLRC="$HOME/.test-upstream/brew.curlrc"
+  printf 'proto = "=file"\n' > "$HOMEBREW_CURLRC"
+
+  if "$real_brew" bundle check "$3" --no-upgrade --verbose; then
     exit 0
   fi
   printf 'E2E: prepare the Brewfile dependencies in an isolated environment before running this suite.\n' >&2

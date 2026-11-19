@@ -24,7 +24,7 @@ E2E 和 setup 不随 `pnpm test` 或 `pnpm check` 运行。GitHub CI 的 `check`
 
 ### Offline E2E
 
-运行前需准备 PATH 中的 Homebrew、Brewfile 中的依赖、可用的 Node.js 和 Corepack，以及本地 Oh My Zsh Git checkout。Homebrew 的 Ruby / Bundler 运行时也必须准备完成；缺少依赖时测试失败，不会补装。无需单独准备 Python 解释器。
+运行前需准备 PATH 中的 Homebrew、Brewfile 中的依赖、可用的 Node.js 和 Corepack，以及本地 Oh My Zsh Git checkout。Homebrew 的 Ruby / Bundler 运行时和 API 缓存也必须准备完成；缺少依赖时测试失败，不会补装。无需单独准备 Python 解释器。
 
 | 环境变量          | 用法                                                                                                                               |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
@@ -45,7 +45,7 @@ OMZ_SOURCE=/path/to/ohmyzsh \
   pnpm test:e2e
 ```
 
-测试会在临时 HOME 中执行本地 Oh My Zsh 安装脚本，并为 Node / Corepack 准备隔离的运行环境。Homebrew 适配器只允许查询，将 Bundle 安装替换为 `brew bundle check --no-upgrade`；远程 Git、npm、Corepack 和运行时下载均被禁用。CI 在准备阶段安装依赖，测试阶段保持离线。
+测试会在临时 HOME 中执行本地 Oh My Zsh 安装脚本，并为 Node / Corepack 准备隔离的运行环境。Homebrew 适配器只允许查询，将 Bundle 安装替换为 `brew bundle check --no-upgrade`，API 缓存使用临时副本，并禁止 HTTP(S) 下载；远程 Git、npm、Corepack 和运行时下载均被禁用。CI 在准备阶段安装依赖，测试阶段保持离线。
 
 ### Local CI
 
@@ -67,7 +67,7 @@ OMZ_SOURCE=/path/to/ohmyzsh \
 - integration 和离线 E2E 使用临时 HOME、XDG 配置、缓存和状态目录。integration 在安装边界使用受控替身；真实 Git 和 `ssh-keygen` 只在测试目录写入，不连接远程或读取真实凭据。实际 shell 启动文件不被修改或加载。
 - 原生 macOS iTerm2 E2E 使用明确的临时偏好文件路径，不启动 iTerm2，也不读写用户偏好；仅更换 HOME 不足以隔离应用偏好域。平台数据覆盖用例不能替代原生平台验证。
 - Ubuntu setup 允许真实下载与安装，但只在独立容器内执行。容器不挂载宿主目录、凭据或 Docker socket，并在成功或失败后清理。
-- macOS setup 会卸载 runner 预装的 Homebrew，仅能在可销毁的 GitHub-hosted 原生 macOS runner 上执行；脚本拒绝本机、act 和自托管 runner。安装与复验使用临时 HOME。
+- macOS setup 会卸载 runner 预装的 Homebrew，并清理其遗留的悬空补全链接，仅能在可销毁的 GitHub-hosted 原生 macOS runner 上执行；脚本拒绝本机、act 和自托管 runner。安装与复验使用临时 HOME。
 
 首次安装测试按 README 执行 init、预览、apply 和再次 apply，验证本机配置、SSH 密钥和开发环境状态得到保留。默认测试与离线 E2E 不承担首次安装的网络验证。
 

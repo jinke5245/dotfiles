@@ -21,6 +21,8 @@ if [ "$1" = --repository ]; then
   exit 0
 fi
 printf '%s\n' "$@" > "$HOME/brew.calls"
+printf '%s\n' "${HOMEBREW_CACHE:-}" "${HOMEBREW_NO_AUTO_UPDATE:-}" \
+  "${HOMEBREW_NO_INSTALL_FROM_API:-}" "${HOMEBREW_CURLRC:-}" > "$HOME/brew.environment"
 EOF
   chmod +x "$SANDBOX_ROOT/real-brew"
   printf '%s\n' "$SANDBOX_ROOT/real-brew" > "$SANDBOX_HOME/.test-upstream/brew-path"
@@ -32,6 +34,9 @@ EOF
   ln -s 1.2.3 "$vendor/portable-ruby/current"
   touch "$vendor/portable-ruby/current/bin/ruby" "$vendor/portable-ruby/current/bin/bundle"
   chmod +x "$vendor/portable-ruby/current/bin/ruby"
+
+  mkdir -p "$SANDBOX_HOME/.test-upstream/homebrew-cache/api"
+  printf '{}\n' > "$SANDBOX_HOME/.test-upstream/homebrew-cache/api/prepared.json"
 }
 
 flow_brew() {
@@ -43,8 +48,25 @@ flow_brew() {
   run -0 flow_brew bundle install "--file=$SANDBOX_REPOSITORY/Brewfile" --no-upgrade
 
   local expected
-  printf -v expected 'bundle\ncheck\n--file=%s/Brewfile\n--no-upgrade' "$SANDBOX_REPOSITORY"
+  printf -v expected 'bundle\ncheck\n--file=%s/Brewfile\n--no-upgrade\n--verbose' "$SANDBOX_REPOSITORY"
   [ "$(cat "$SANDBOX_HOME/brew.calls")" = "$expected" ]
+  [ "$(sed -n '1p' "$SANDBOX_HOME/brew.environment")" = "$SANDBOX_HOME/.test-upstream/homebrew-cache" ]
+  [ "$(sed -n '2p' "$SANDBOX_HOME/brew.environment")" = 1 ]
+  [ -z "$(sed -n '3p' "$SANDBOX_HOME/brew.environment")" ]
+
+  run -1 /usr/bin/curl --disable --config "$(sed -n '4p' "$SANDBOX_HOME/brew.environment")" \
+    https://example.invalid
+
+  [[ "$output" == *'disabled'* ]]
+}
+
+@test "offline E2E stops before Homebrew could download a missing API cache" {
+  rm -r "$SANDBOX_HOME/.test-upstream/homebrew-cache/api"
+
+  run -1 flow_brew bundle install "--file=$SANDBOX_REPOSITORY/Brewfile" --no-upgrade
+
+  [[ "$output" == *'Homebrew API cache'* ]]
+  [ ! -e "$SANDBOX_HOME/brew.calls" ]
 }
 
 @test "offline E2E refuses Homebrew operations outside its read-only contract" {
