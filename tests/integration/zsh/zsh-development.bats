@@ -3,9 +3,9 @@
 # Snippets expand in the isolated Zsh process. Each case owns its search paths.
 # shellcheck disable=SC2016,SC2030,SC2031
 
-load '../../helpers/sandbox.bash'
-load '../../helpers/zsh.bash'
-load '../../helpers/zsh-development.bash'
+load '../../support/helpers/sandbox.bash'
+load '../../support/helpers/zsh.bash'
+load '../../support/helpers/zsh-development.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0
@@ -17,11 +17,11 @@ setup() {
   zsh_fixture_plugins "$SANDBOX_ROOT/brew"
   zsh_fixture_development "$SANDBOX_ROOT/brew"
   zsh_fixture_oh_my_zsh
-  cat "$SANDBOX_REPOSITORY/tests/fixtures/zsh/completion.zsh" >> "$SANDBOX_HOME/.oh-my-zsh/oh-my-zsh.sh"
+  cat "$SANDBOX_REPOSITORY/tests/support/fixtures/zsh/completion.zsh" >> "$SANDBOX_HOME/.oh-my-zsh/oh-my-zsh.sh"
   SANDBOX_ZSH_PATH="$SANDBOX_ROOT/brew/bin:$SANDBOX_ZSH_PATH"
 }
 
-@test "interactive login shells initialize fnm after Oh My Zsh and before local overrides" {
+@test "interactive login shells initialize fnm after plugins and before local overrides" {
   cat > "$SANDBOX_HOME/.zshrc.local" << 'EOF'
 [[ -n $FNM_MULTISHELL_PATH && ${_comps[fnm]} = _fnm ]] || return 1
 print -r -- local >> "$ZSH_TEST_TRACE"
@@ -32,8 +32,8 @@ EOF
   [ "$output" = "$SANDBOX_HOME/.fnm-test/multishell/bin/node" ]
   [ "$(cat "$SANDBOX_ROOT/startup.log")" = "$(printf '%s\n' \
     brew "omz:robbyrussell:git:$SANDBOX_ROOT/brew" completion:_dotfiles-test \
-    fnm-env fnm-completions autojump zsh-autosuggestions \
-    zsh-syntax-highlighting zsh-history-substring-search local)" ]
+    autojump zsh-autosuggestions zsh-syntax-highlighting zsh-history-substring-search \
+    fnm-env fnm-completions local)" ]
 }
 
 @test "standalone interactive shells initialize fnm without repeating Homebrew shellenv" {
@@ -42,7 +42,7 @@ EOF
   [ "$output" = "$SANDBOX_HOME/.fnm-test/multishell/bin/node" ]
   local events
   events="$(cat "$SANDBOX_ROOT/startup.log")"
-  [[ "$events" == brew-prefix$'\n'* && "$events" == *$'fnm-env\nfnm-completions\n'* ]] || return 1
+  [[ "$events" == brew-prefix$'\n'* && "$events" == *$'\nfnm-env\nfnm-completions' ]] || return 1
 }
 
 @test "interactive shells expose rustup shims without invoking them or duplicating PATH" {
@@ -83,6 +83,26 @@ EOF
 
   [ "$output" = ready ]
   [ -z "$stderr" ]
+}
+
+@test "interactive shells prefer Homebrew OpenJDK without duplicating PATH" {
+  local jdk_bin="$SANDBOX_ROOT/brew/opt/openjdk/bin" tool mode
+  mkdir -p "$jdk_bin"
+  for tool in java javac; do
+    cp "$SANDBOX_ROOT/brew/bin/go" "$jdk_bin/$tool"
+    cp "$SANDBOX_ROOT/brew/bin/go" "$SANDBOX_ROOT/brew/bin/$tool"
+  done
+
+  for mode in -lic -ic; do
+    run -0 --separate-stderr sandbox_zsh "$mode" '
+      source "$HOME/.zshrc"
+      command -v java javac
+      print -l -- $path | grep -Fxc "$1"
+    ' _ "$jdk_bin"
+
+    [ "$output" = "$jdk_bin/java"$'\n'"$jdk_bin/javac"$'\n'1 ]
+    [ -z "$stderr" ]
+  done
 }
 
 @test "uv and uvx completions are discovered without executing either tool" {

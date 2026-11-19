@@ -3,7 +3,7 @@
 # The child shell reads the isolated HOME and sources the repository copy.
 # shellcheck disable=SC2016
 
-load '../helpers/sandbox.bash'
+load '../../support/helpers/sandbox.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0

@@ -62,6 +62,12 @@ export default defineConfig([
     },
   },
   {
+    files: ["**/*.{json,jsonc,json5,yml,yaml}"],
+    rules: {
+      "json-schema-validator/no-invalid": "error",
+    },
+  },
+  {
     files: ["**/*.md"],
     plugins: { markdown },
     language: "markdown/gfm",

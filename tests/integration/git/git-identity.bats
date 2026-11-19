@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 
-load '../../helpers/sandbox.bash'
-load '../../helpers/git.bash'
+load '../../support/helpers/sandbox.bash'
+load '../../support/helpers/git.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0
@@ -209,6 +209,31 @@ CONFIG
 
   cmp "$SANDBOX_GIT_LOCAL" "$SANDBOX_ROOT/local.before"
   [ "$(cat "$SANDBOX_GIT_LOCAL.lock")" = 'existing lock' ]
+}
+
+@test "termination releases the application lock so Git identity can be retried" {
+  printf '[core]\n editor = keep\n' > "$SANDBOX_GIT_LOCAL"
+  cp -p "$SANDBOX_GIT_LOCAL" "$SANDBOX_ROOT/local.before"
+  mkdir "$SANDBOX_ROOT/real"
+  ln -s "$SANDBOX_GIT" "$SANDBOX_ROOT/real/git"
+  cat > "$SANDBOX_ROOT/bin/git" << 'WRAPPER'
+#!/usr/bin/env bash
+# Signal only the isolated parent that is writing to the owned lock.
+if [[ "$1" = config && "$2" = --file && "$3" = "$HOME/.config/git/config.local.lock" ]]; then
+  kill -TERM "$PPID"
+  exit 1
+fi
+exec "${0%/*}/../real/git" "$@"
+WRAPPER
+  chmod +x "$SANDBOX_ROOT/bin/git"
+
+  run -143 git_identity_initialize 'Saved Name' saved@example.invalid
+
+  cmp "$SANDBOX_GIT_LOCAL" "$SANDBOX_ROOT/local.before"
+  [ ! -e "$SANDBOX_GIT_LOCAL.lock" ]
+  rm "$SANDBOX_ROOT/bin/git"
+  run -0 git_identity_initialize 'Saved Name' saved@example.invalid
+  git_assert_local_identity 'Saved Name' saved@example.invalid
 }
 
 @test "initialization keeps temporary configuration private" {

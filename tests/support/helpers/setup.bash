@@ -77,22 +77,22 @@ setup_check_git_tools() {
 
 setup_check_git_configuration() {
   run -0 setup_shell 'exec zsh -lc "$1" _ "$2"' _ '
-    source "$1/tests/helpers/git-flow.bash"
+    source "$1/tests/support/helpers/git-flow.bash"
     git_flow_check
   ' "$SETUP_SOURCE"
 }
 
 setup_check_ssh_keys() {
   run -0 setup_shell '
-    source "$1/tests/helpers/ssh-flow.bash"
+    source "$1/tests/support/helpers/ssh-flow.bash"
     ssh_flow_check initial@example.invalid
   ' _ "$SETUP_SOURCE"
 }
 
 setup_prepare_development() {
   run -0 setup_shell 'exec zsh -lic "$1" _ "$2"' _ '
-    source "$1/tests/helpers/development-flow.bash"
-    source "$1/tests/helpers/setup-development.bash"
+    source "$1/tests/support/helpers/development-flow.bash"
+    source "$1/tests/support/helpers/setup-development.bash"
     setup_development_prepare
   ' "$SETUP_SOURCE"
 }
@@ -104,8 +104,8 @@ setup_check_development() {
     export FNM_NODE_DIST_MIRROR=file:///dev/null GOPROXY=off GOTOOLCHAIN=local
     exec zsh -lic "$1" _ "$2"
   ' _ '
-    source "$1/tests/helpers/development-flow.bash"
-    source "$1/tests/helpers/setup-development.bash"
+    source "$1/tests/support/helpers/development-flow.bash"
+    source "$1/tests/support/helpers/setup-development.bash"
     setup_development_check
   ' "$SETUP_SOURCE"
 }
@@ -114,7 +114,7 @@ setup_check_flow() {
   # Follow the README sequence, including PATH before the first login shell.
   run -0 setup_shell '
     # Keep existing shell customization, but start without a Git identity.
-    cp "$1/tests/fixtures/zsh/local.zsh" "$HOME/.zshrc.local"
+    cp "$1/tests/support/fixtures/zsh/local.zsh" "$HOME/.zshrc.local"
     printf "export DOTFILES_TEST_LOGIN_LOCAL=loaded\n" > "$HOME/.zprofile.local"
     test ! -e "$HOME/.config/git/config.local"
     sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin"
@@ -136,7 +136,7 @@ setup_check_flow() {
     chezmoi --source "$PWD" apply </dev/null
     test -f "$HOME/.oh-my-zsh/oh-my-zsh.sh"
     cmp home/dot_zshrc "$HOME/.zshrc"
-    cmp tests/fixtures/zsh/local.zsh "$HOME/.zshrc.local"
+    cmp tests/support/fixtures/zsh/local.zsh "$HOME/.zshrc.local"
     test "$(git -C / config --get user.name)" = "Initial User"
     test "$(git -C / config --get user.email)" = initial@example.invalid
 

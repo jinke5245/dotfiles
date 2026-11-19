@@ -3,7 +3,7 @@
 # Git setup and commits stay inside temporary repositories.
 # shellcheck disable=SC2016
 
-load '../../helpers/sandbox.bash'
+load '../../support/helpers/sandbox.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0
@@ -28,7 +28,7 @@ setup_file() {
   run -0 env -i HOME="$SANDBOX_HOME" PATH="$SANDBOX_ROOT/bin:$PATH" \
     GIT_CONFIG_NOSYSTEM=1 GIT_ALLOW_PROTOCOL=file GIT_DIR="$external/.git" \
     OMZ_SOURCE="$upstream" BATS_FILE_TMPDIR="$SANDBOX_ROOT/flow" \
-    /bin/bash -e -c 'source "$1/tests/helpers/flow.bash"; flow_suite_setup' _ "$SANDBOX_REPOSITORY"
+    /bin/bash -e -c 'source "$1/tests/support/helpers/flow.bash"; flow_suite_setup' _ "$SANDBOX_REPOSITORY"
 
   [ ! -e "$external/.git/FETCH_HEAD" ]
   [ ! -e "$external/.git/refs/heads/master" ]

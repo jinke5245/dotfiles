@@ -17,19 +17,19 @@ install_sandbox_create() {
   # Shadow external commands so tests cannot reach the network or package manager.
   local fixture
   for fixture in apt-get curl defaults git plutil sudo uname; do
-    cp "$SANDBOX_REPOSITORY/tests/fixtures/install/$fixture.bash" "$SANDBOX_ROOT/bin/$fixture"
+    cp "$SANDBOX_REPOSITORY/tests/support/fixtures/install/$fixture.bash" "$SANDBOX_ROOT/bin/$fixture"
     chmod +x "$SANDBOX_ROOT/bin/$fixture"
   done
 
   # curl serves these scripts instead of downloading the real installers.
   for fixture in homebrew oh-my-zsh; do
-    cp "$SANDBOX_REPOSITORY/tests/fixtures/install/$fixture-installer.bash" \
+    cp "$SANDBOX_REPOSITORY/tests/support/fixtures/install/$fixture-installer.bash" \
       "$SANDBOX_HOME/.install-test/$fixture-installer.bash"
   done
-  cp "$SANDBOX_REPOSITORY/tests/fixtures/install/brew.bash" "$SANDBOX_HOME/.install-test/brew.bash"
+  cp "$SANDBOX_REPOSITORY/tests/support/fixtures/install/brew.bash" "$SANDBOX_HOME/.install-test/brew.bash"
 
   for fixture in fnm npm corepack unexpected-command; do
-    cp "$SANDBOX_REPOSITORY/tests/fixtures/install/$fixture.bash" "$SANDBOX_HOME/.install-test/$fixture.bash"
+    cp "$SANDBOX_REPOSITORY/tests/support/fixtures/install/$fixture.bash" "$SANDBOX_HOME/.install-test/$fixture.bash"
   done
 
   # Catch accidental use of an unrelated runtime or package manager on PATH.
@@ -80,6 +80,6 @@ install_sandbox_platform() {
 
 install_fixture_brew() {
   mkdir -p "$1/bin"
-  cp "$SANDBOX_REPOSITORY/tests/fixtures/install/brew.bash" "$1/bin/brew"
+  cp "$SANDBOX_REPOSITORY/tests/support/fixtures/install/brew.bash" "$1/bin/brew"
   chmod +x "$1/bin/brew"
 }

@@ -5,8 +5,8 @@
 # Each Bats case has its own sandbox; overrides are intentionally local to it.
 # shellcheck disable=SC2030,SC2031
 
-load '../../helpers/sandbox.bash'
-load '../../helpers/ssh.bash'
+load '../../support/helpers/sandbox.bash'
+load '../../support/helpers/ssh.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0

@@ -5,9 +5,9 @@
 # Snippets execute in the guarded GitHub runner's temporary home.
 # shellcheck disable=SC2016
 
-load '../helpers/sandbox.bash'
-load '../helpers/setup.bash'
-load '../helpers/setup-macos.bash'
+load '../support/helpers/sandbox.bash'
+load '../support/helpers/setup.bash'
+load '../support/helpers/setup-macos.bash'
 
 setup_file() {
   bats_require_minimum_version 1.10.0

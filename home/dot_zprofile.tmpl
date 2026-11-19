@@ -25,20 +25,34 @@ export PATH
 {{ if eq .chezmoi.os "linux" }}
 # Reuse or start ssh-agent when no agent is inherited.
 if [ -z "${SSH_AUTH_SOCK:-}" ]; then
-  if [ -f "$HOME/.ssh/ssh-agent" ]; then
-    eval "$(cat "$HOME/.ssh/ssh-agent")" > /dev/null
-  fi
-  SSH_AGENT_STATUS=0
-  ssh-add -l > /dev/null 2>&1 || SSH_AGENT_STATUS=$?
-  # Exit 1 means a live agent without keys; only 2 means it cannot be reached.
-  if [ "$SSH_AGENT_STATUS" = "2" ]; then
-    ssh-agent -s &> "$HOME/.ssh/ssh-agent"
-    eval "$(cat "$HOME/.ssh/ssh-agent")" > /dev/null
-  fi
+  () {
+    local agent_cache="$HOME/.ssh/ssh-agent" agent_status=0 agent_tmp
+    # Only read or replace an agent cache we own at this path.
+    [[ ! -L "$agent_cache" ]] || return
+    if [[ -e "$agent_cache" ]]; then
+      [[ -f "$agent_cache" && -O "$agent_cache" ]] || return
+      eval "$(< "$agent_cache")" > /dev/null
+    fi
 
-  if [ -f "$HOME/.ssh/id_ed25519" ]; then
-    ssh-add "$HOME/.ssh/id_ed25519" 2> /dev/null
-  fi
+    ssh-add -l > /dev/null 2>&1 || agent_status=$?
+    # Exit 1 means a live agent without keys; only 2 means it cannot be reached.
+    if [[ "$agent_status" = 2 ]]; then
+      mkdir -p -m 700 -- "$HOME/.ssh" 2> /dev/null || return
+      agent_tmp=$(mktemp -d "${agent_cache}.XXXXXX" 2> /dev/null) || return
+      {
+        (umask 077; ssh-agent -s > "$agent_tmp/ssh-agent" 2> /dev/null) || return
+        eval "$(< "$agent_tmp/ssh-agent")" > /dev/null
+        mv -f -- "$agent_tmp/ssh-agent" "$HOME/.ssh/" 2> /dev/null
+      } always {
+        rm -f -- "$agent_tmp/ssh-agent"
+        rmdir -- "$agent_tmp"
+      }
+    fi
+
+    if [[ -f "$HOME/.ssh/id_ed25519" ]]; then
+      ssh-add "$HOME/.ssh/id_ed25519" 2> /dev/null
+    fi
+  }
 fi
 {{ end }}
 

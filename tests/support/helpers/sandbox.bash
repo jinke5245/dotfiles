@@ -21,14 +21,15 @@ sandbox_create() {
 
 sandbox_copy_repository() {
   local project_root
-  project_root="${2:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)}"
+  project_root="${2:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)}"
   mkdir -p "$1"
 
   # Copy current contents, including new files, without ignored local data.
   (
     set -o pipefail
-    env -i HOME="$BATS_TEST_TMPDIR" PATH="$PATH" GIT_CONFIG_NOSYSTEM=1 \
-      git -C "$project_root" ls-files --cached --others --exclude-standard -z \
+    # Keep personal excludes without inheriting Git overrides or running fsmonitor.
+    env -i HOME="$HOME" XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-}" PATH="$PATH" GIT_CONFIG_NOSYSTEM=1 \
+      git -c core.fsmonitor=false -C "$project_root" ls-files --cached --others --exclude-standard -z \
       | while IFS= read -r -d '' file; do
         # Deleted tracked files remain in the index until staged.
         if [ -e "$project_root/$file" ] || [ -L "$project_root/$file" ]; then

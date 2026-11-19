@@ -8,6 +8,7 @@ brew "git-lfs"
 brew "glab"
 brew "go"
 brew "htop"
+brew "openjdk" unless OS.mac? && Hardware::CPU.intel?
 brew "rustup"
 brew "tig"
 brew "tree"

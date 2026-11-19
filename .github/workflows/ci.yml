@@ -48,6 +48,9 @@ jobs:
       - uses: ./.github/actions/setup-homebrew
       - run: brew bundle install --file=Brewfile --no-upgrade
       - uses: ./.github/actions/setup-chezmoi
+      - name: Test native iTerm2 preferences
+        if: runner.os == 'macOS'
+        run: pnpm exec bats --print-output-on-failure tests/integration/iterm2/iterm2-preferences.bats
       - run: pnpm test:e2e
         env:
           OMZ_SOURCE: ${{ github.workspace }}/.cache/ohmyzsh

@@ -3,8 +3,8 @@
 # Each test runs the entry point with its own command search path.
 # shellcheck disable=SC2030,SC2031
 
-load '../../helpers/sandbox.bash'
-load '../../helpers/install.bash'
+load '../../support/helpers/sandbox.bash'
+load '../../support/helpers/install.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0

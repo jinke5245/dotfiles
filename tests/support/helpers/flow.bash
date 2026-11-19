@@ -3,7 +3,7 @@
 # Scenario variables are consumed by Bats and the shared Zsh helper.
 # shellcheck disable=SC2034
 
-# shellcheck source=tests/helpers/node-flow.bash
+# shellcheck source=tests/support/helpers/node-flow.bash
 source "$(dirname "${BASH_SOURCE[0]}")/node-flow.bash"
 
 flow_suite_setup() {
@@ -44,7 +44,7 @@ flow_sandbox_create() {
   ln -s "$SANDBOX_ZSH" "$SANDBOX_ROOT/bin/zsh"
   local command
   for command in brew curl; do
-    cp "$SANDBOX_REPOSITORY/tests/fixtures/flow/$command.bash" "$SANDBOX_ROOT/bin/$command"
+    cp "$SANDBOX_REPOSITORY/tests/support/fixtures/flow/$command.bash" "$SANDBOX_ROOT/bin/$command"
     chmod +x "$SANDBOX_ROOT/bin/$command"
   done
 

@@ -46,6 +46,8 @@ initialize_git_identity() (
         : > "$lock"
       ) || return
       trap '[[ $? -eq 0 ]] || rm -f "$lock"' EXIT
+      # Handle TERM before older Bash versions unwind function-local variables.
+      trap 'trap - EXIT; rm -f "$lock"; exit 143' TERM
       # Keep an existing UTF-8 BOM ahead of the generated defaults.
       if [[ -f "$config" && "$(head -c 3 "$config")" = $'\357\273\277' ]]; then
         printf '\357\273\277\n' > "$lock" || return
@@ -63,5 +65,7 @@ initialize_git_identity() (
     chmod "$mode" "$lock" || return
   fi
   git --git-dir=/dev/null config --file "$lock" --list > /dev/null || return
+  # Do not remove a new writer's lock once the rename releases ours.
+  trap '' TERM
   mv -f "$lock" "$target"
 )

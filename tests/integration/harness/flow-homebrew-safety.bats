@@ -3,7 +3,7 @@
 # The stand-in executable expands HOME in its isolated child process.
 # shellcheck disable=SC2016
 
-load '../../helpers/sandbox.bash'
+load '../../support/helpers/sandbox.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0
@@ -41,7 +41,7 @@ EOF
 
 flow_brew() {
   env -i HOME="$SANDBOX_HOME" PATH=/usr/bin:/bin \
-    /bin/bash "$SANDBOX_REPOSITORY/tests/fixtures/flow/brew.bash" "$@"
+    /bin/bash "$SANDBOX_REPOSITORY/tests/support/fixtures/flow/brew.bash" "$@"
 }
 
 @test "offline E2E replaces package installation with a read-only dependency check" {

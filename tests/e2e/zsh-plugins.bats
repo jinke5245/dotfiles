@@ -3,9 +3,9 @@
 # Scenarios are read by Zsh inside the sandbox, not expanded by Bats.
 # shellcheck disable=SC2016
 
-load '../helpers/sandbox.bash'
-load '../helpers/zsh.bash'
-load '../helpers/flow.bash'
+load '../support/helpers/sandbox.bash'
+load '../support/helpers/zsh.bash'
+load '../support/helpers/flow.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0

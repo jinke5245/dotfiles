@@ -3,8 +3,8 @@
 # Shell snippets expand their arguments in the isolated child process.
 # shellcheck disable=SC2016
 
-load '../../helpers/sandbox.bash'
-load '../../helpers/ssh.bash'
+load '../../support/helpers/sandbox.bash'
+load '../../support/helpers/ssh.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0
@@ -45,7 +45,7 @@ setup() {
   ssh_fixture_key 'dotfiles test passphrase'
   rm "$SANDBOX_SSH_KEY.pub"
   cp -p "$SANDBOX_SSH_KEY" "$SANDBOX_ROOT/private.before"
-  cp "$SANDBOX_REPOSITORY/tests/fixtures/ssh/askpass.bash" "$SANDBOX_ROOT/askpass"
+  cp "$SANDBOX_REPOSITORY/tests/support/fixtures/ssh/askpass.bash" "$SANDBOX_ROOT/askpass"
   chmod +x "$SANDBOX_ROOT/askpass"
 
   # Only the human input boundary is substituted; key decryption remains real.
