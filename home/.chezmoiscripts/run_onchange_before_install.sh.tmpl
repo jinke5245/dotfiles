@@ -1,0 +1,15 @@
+{{- $user := get . "user" | default dict -}}
+{{- $rootPattern := .chezmoi.workingTree | replace "[" "[[]" | replace "\\" "[\\\\]" | replace "*" "[*]" | replace "?" "[?]" | replace "{" "\\{" | replace "}" "\\}" -}}
+#!/usr/bin/env bash
+
+# Track external inputs so their changes rerun the installer.
+{{- range $pattern := list "Brewfile" "scripts/install/install.sh" "scripts/install/lib/*.sh" "home/Library/Application Support/iTerm2/DynamicProfiles/dotfiles.json" }}
+{{- range glob (joinPath $rootPattern $pattern) }}
+# {{ base . }}: {{ include . | sha256sum }}
+{{- end }}
+{{- end }}
+
+# Single-quote arguments while preserving literal backslashes.
+exec bash '{{ joinPath .chezmoi.workingTree "scripts" "install" "install.sh" | replace "'" "'\\''" }}' \
+  '{{ get $user "name" | default "" | replace "'" "'\\''" }}' \
+  '{{ get $user "email" | default "" | replace "'" "'\\''" }}'

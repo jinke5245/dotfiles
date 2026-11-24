@@ -90,7 +90,7 @@ Keep `pnpm ci:test` separate from `pnpm check` because the check job calls `pnpm
 
 - Call functions explicitly from entry points. Sourcing a library should have no installation side effects.
 - Keep installation safe to rerun and separate from shell startup.
-- Run external installers through `run_before_` hooks on every apply. Installers must not invoke `chezmoi apply`.
+- Run external installers through `run_onchange_before_` hooks. Include checksums of external inputs so changes to the Brewfile, installation scripts, and iTerm2 Profile trigger another run. Installers must not invoke `chezmoi apply`.
 - Render templates before checking them. Use `zsh -n` for Zsh files and exclude them from Bash formatters.
 - Keep the Oh My Zsh template examples. Set completion paths before Oh My Zsh initializes and load shell plugins afterward. Keep development tools after the examples and machine-specific overrides in `.zshrc.local`.
 

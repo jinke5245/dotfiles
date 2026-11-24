@@ -87,7 +87,7 @@ TOML
   ssh_assert_preserved "$SANDBOX_SSH_KEY.pub" "$SANDBOX_ROOT/public.before"
 }
 
-@test "a later apply recovers a deleted public key without changing the private key" {
+@test "changed installer inputs trigger public-key recovery without changing the private key" {
   sandbox_chezmoi apply
   cp -p "$SANDBOX_SSH_KEY" "$SANDBOX_ROOT/private.before"
   cp "$SANDBOX_SSH_KEY.pub" "$SANDBOX_ROOT/expected.pub"

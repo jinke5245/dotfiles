@@ -33,6 +33,19 @@ setup() {
   [ ! -e "$SANDBOX_HOME/Library" ]
 }
 
+@test "a shared Profile change reruns iTerm2 configuration" {
+  install_sandbox_platform Darwin
+  sandbox_chezmoi --override-data '{"chezmoi":{"os":"darwin"}}' apply
+  local profile="$SANDBOX_REPOSITORY/home/Library/Application Support/iTerm2/DynamicProfiles/dotfiles.json"
+  local guid=00000000-0000-4000-8000-000000000001
+  sed "s/\"Guid\": \"[^\"]*\"/\"Guid\": \"$guid\"/" "$profile" > "$SANDBOX_ROOT/profile.json"
+  mv "$SANDBOX_ROOT/profile.json" "$profile"
+
+  run -0 sandbox_chezmoi --override-data '{"chezmoi":{"os":"darwin"}}' apply
+
+  [ "$(cat "$SANDBOX_HOME/.install-test/defaults/Default Bookmark Guid")" = "$(printf '%s\n' -string "$guid")" ]
+}
+
 @test "a preference write failure stops apply before managed files change" {
   install_sandbox_platform Darwin
   touch "$SANDBOX_HOME/.install-test/fail-iterm2"

@@ -76,7 +76,11 @@ setup() {
   [ ! -e "$SANDBOX_HOME/.install-test/oh-my-zsh.log" ]
 }
 
-@test "each apply reads the current Brewfile without reinstalling Homebrew" {
+@test "a changed Brewfile reruns Bundle from a dotted checkout with glob characters" {
+  local repository="$SANDBOX_ROOT/github.com/.dotfiles [1]*?{a,b}"
+  mkdir -p "$(dirname "$repository")"
+  mv "$SANDBOX_REPOSITORY" "$repository"
+  SANDBOX_REPOSITORY="$repository"
   install_fixture_brew "$SANDBOX_ROOT/prefixes/linux"
   sandbox_chezmoi apply
 

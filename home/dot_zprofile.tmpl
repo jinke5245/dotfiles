@@ -50,7 +50,14 @@ if [ -z "${SSH_AUTH_SOCK:-}" ]; then
     fi
 
     if [[ -f "$HOME/.ssh/id_ed25519" ]]; then
-      ssh-add "$HOME/.ssh/id_ed25519" 2> /dev/null
+      # Preserve passphrase unlocks and constraints on keys already in the agent.
+      if [[ ! -r "$HOME/.ssh/id_ed25519.pub" ]] || ! ssh-add -L 2> /dev/null | awk '
+        NR == FNR { if (FNR == 1) { type = $1; key = $2 }; next }
+        $1 == type && $2 == key { found = 1 }
+        END { exit !found }
+      ' "$HOME/.ssh/id_ed25519.pub" -; then
+        ssh-add "$HOME/.ssh/id_ed25519" 2> /dev/null
+      fi
     fi
   }
 fi

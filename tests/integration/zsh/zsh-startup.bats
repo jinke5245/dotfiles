@@ -25,13 +25,13 @@ setup() {
   done
 }
 
-@test "Linux login starts and reuses the cached agent and adds the local key" {
+@test "Linux login reuses the cached agent without readding its loaded local key" {
   zsh_sandbox_apply linux amd64
   mkdir -p "$SANDBOX_HOME/.ssh"
   printf 'test key\n' > "$SANDBOX_HOME/.ssh/id_ed25519"
+  printf 'ssh-ed25519 target-key file-comment\n' > "$SANDBOX_HOME/.ssh/id_ed25519.pub"
   cat >> "$SANDBOX_HOME/.zshenv" << 'EOF'
 unset SSH_AUTH_SOCK
-ps() { print -r -- '123 ssh-agent -s'; }
 ssh-agent() {
   [[ "$*" = -s ]] || return 1
   print -r -- agent-start >> "$ZSH_TEST_TRACE"
@@ -41,21 +41,58 @@ ssh-add() {
   if [[ "$*" = -l ]]; then
     return "$(cat "$HOME/.ssh/agent-status")"
   fi
+  if [[ "$*" = -L ]]; then
+    [[ "$(cat "$HOME/.ssh/agent-status")" = 0 ]] || return 1
+    print -r -- 'ssh-ed25519 target-key agent-comment'
+    return
+  fi
   [[ "$#" = 1 && "$1" = "$HOME/.ssh/id_ed25519" ]] || return 1
   print -r -- agent-add >> "$ZSH_TEST_TRACE"
 }
 EOF
 
-  local agent_status
-  for agent_status in 2 0 1; do
+  local agent_status expected_additions
+  while read -r agent_status expected_additions; do
     printf '%s\n' "$agent_status" > "$SANDBOX_HOME/.ssh/agent-status"
     run -0 --separate-stderr sandbox_zsh -lc 'print -r -- "$SSH_AUTH_SOCK"'
 
     [ "$output" = "$SANDBOX_HOME/.ssh/test.sock" ]
     [ -z "$stderr" ]
-  done
+    [ "$(grep -c '^agent-add$' "$SANDBOX_ROOT/startup.log")" = "$expected_additions" ]
+  done << 'EOF'
+2 1
+0 1
+1 2
+EOF
   [ "$(grep -c '^agent-start$' "$SANDBOX_ROOT/startup.log")" = 1 ]
-  [ "$(grep -c '^agent-add$' "$SANDBOX_ROOT/startup.log")" = 3 ]
+}
+
+@test "Linux login adds its local key when the cached agent only has other keys" {
+  zsh_sandbox_apply linux amd64
+  mkdir -p "$SANDBOX_HOME/.ssh"
+  printf 'test key\n' > "$SANDBOX_HOME/.ssh/id_ed25519"
+  printf 'ssh-ed25519 target-key file-comment\n' > "$SANDBOX_HOME/.ssh/id_ed25519.pub"
+  printf 'SSH_AUTH_SOCK=%q; export SSH_AUTH_SOCK;\n' \
+    "$SANDBOX_HOME/.ssh/cached.sock" > "$SANDBOX_HOME/.ssh/ssh-agent"
+  cat >> "$SANDBOX_HOME/.zshenv" << 'EOF'
+unset SSH_AUTH_SOCK
+ssh-add() {
+  [[ "$*" != -l ]] || return 0
+  if [[ "$*" = -L ]]; then
+    # The target key in another key's comment must not count as loaded.
+    print -r -- 'ssh-ed25519 other-key ssh-ed25519 target-key file-comment'
+    return
+  fi
+  [[ "$#" = 1 && "$1" = "$HOME/.ssh/id_ed25519" ]] || return 1
+  print -r -- agent-add >> "$ZSH_TEST_TRACE"
+}
+EOF
+
+  run -0 --separate-stderr sandbox_zsh -lc 'print -r -- "$SSH_AUTH_SOCK"'
+
+  [ "$output" = "$SANDBOX_HOME/.ssh/cached.sock" ]
+  [ -z "$stderr" ]
+  [ "$(cat "$SANDBOX_ROOT/startup.log")" = agent-add ]
 }
 
 @test "Linux login replaces a stale cached agent even when another agent exists" {
