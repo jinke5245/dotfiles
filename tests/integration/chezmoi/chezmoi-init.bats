@@ -1,8 +1,8 @@
 #!/usr/bin/env bats
 
-load '../../helpers/sandbox.bash'
-load '../../helpers/git.bash'
-load '../../helpers/identity.bash'
+load '../../support/helpers/sandbox.bash'
+load '../../support/helpers/git.bash'
+load '../../support/helpers/identity.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0

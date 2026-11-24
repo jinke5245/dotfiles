@@ -1,4 +1,4 @@
-import { defineConfig } from "eslint/config";
+import { defineConfig, includeIgnoreFile } from "eslint/config";
 import globals from "globals";
 import js from "@eslint/js";
 import json from "@eslint/json";
@@ -8,6 +8,7 @@ import prettier from "eslint-config-prettier";
 import jsonschema from "eslint-plugin-json-schema-validator";
 
 export default defineConfig([
+  includeIgnoreFile(import.meta.dirname + "/.gitignore"),
   {
     ignores: [
       ".agents/",
@@ -55,6 +56,10 @@ export default defineConfig([
       "yaml/recommended",
       "jsonschema/recommended",
     ],
+    rules: {
+      "yaml/no-empty-document": "off",
+      "yaml/no-empty-mapping-value": "off",
+    },
   },
   {
     files: ["**/*.{json,jsonc,json5,yml,yaml}"],
@@ -67,6 +72,9 @@ export default defineConfig([
     plugins: { markdown },
     language: "markdown/gfm",
     extends: ["markdown/recommended"],
+    rules: {
+      "markdown/no-missing-label-refs": "off",
+    },
   },
   prettier,
 ]);

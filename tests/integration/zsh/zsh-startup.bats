@@ -3,8 +3,8 @@
 # Shell snippets expand in Zsh. Bats isolates each test; helpers read scenario variables.
 # shellcheck disable=SC2016,SC2030,SC2031
 
-load '../../helpers/sandbox.bash'
-load '../../helpers/zsh.bash'
+load '../../support/helpers/sandbox.bash'
+load '../../support/helpers/zsh.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0
@@ -23,6 +23,167 @@ setup() {
     run -0 sandbox_zsh -n "$SANDBOX_HOME/$startup_file"
     [ -z "$output" ]
   done
+}
+
+@test "Linux login reuses the cached agent without readding its loaded local key" {
+  zsh_sandbox_apply linux amd64
+  mkdir -p "$SANDBOX_HOME/.ssh"
+  printf 'test key\n' > "$SANDBOX_HOME/.ssh/id_ed25519"
+  printf 'ssh-ed25519 target-key file-comment\n' > "$SANDBOX_HOME/.ssh/id_ed25519.pub"
+  cat >> "$SANDBOX_HOME/.zshenv" << 'EOF'
+unset SSH_AUTH_SOCK
+ssh-agent() {
+  [[ "$*" = -s ]] || return 1
+  print -r -- agent-start >> "$ZSH_TEST_TRACE"
+  printf 'SSH_AUTH_SOCK=%q; export SSH_AUTH_SOCK;\necho Agent pid 12345;\n' "$HOME/.ssh/test.sock"
+}
+ssh-add() {
+  if [[ "$*" = -l ]]; then
+    return "$(cat "$HOME/.ssh/agent-status")"
+  fi
+  if [[ "$*" = -L ]]; then
+    [[ "$(cat "$HOME/.ssh/agent-status")" = 0 ]] || return 1
+    print -r -- 'ssh-ed25519 target-key agent-comment'
+    return
+  fi
+  [[ "$#" = 1 && "$1" = "$HOME/.ssh/id_ed25519" ]] || return 1
+  print -r -- agent-add >> "$ZSH_TEST_TRACE"
+}
+EOF
+
+  local agent_status expected_additions
+  while read -r agent_status expected_additions; do
+    printf '%s\n' "$agent_status" > "$SANDBOX_HOME/.ssh/agent-status"
+    run -0 --separate-stderr sandbox_zsh -lc 'print -r -- "$SSH_AUTH_SOCK"'
+
+    [ "$output" = "$SANDBOX_HOME/.ssh/test.sock" ]
+    [ -z "$stderr" ]
+    [ "$(grep -c '^agent-add$' "$SANDBOX_ROOT/startup.log")" = "$expected_additions" ]
+  done << 'EOF'
+2 1
+0 1
+1 2
+EOF
+  [ "$(grep -c '^agent-start$' "$SANDBOX_ROOT/startup.log")" = 1 ]
+}
+
+@test "Linux login adds its local key when the cached agent only has other keys" {
+  zsh_sandbox_apply linux amd64
+  mkdir -p "$SANDBOX_HOME/.ssh"
+  printf 'test key\n' > "$SANDBOX_HOME/.ssh/id_ed25519"
+  printf 'ssh-ed25519 target-key file-comment\n' > "$SANDBOX_HOME/.ssh/id_ed25519.pub"
+  printf 'SSH_AUTH_SOCK=%q; export SSH_AUTH_SOCK;\n' \
+    "$SANDBOX_HOME/.ssh/cached.sock" > "$SANDBOX_HOME/.ssh/ssh-agent"
+  cat >> "$SANDBOX_HOME/.zshenv" << 'EOF'
+unset SSH_AUTH_SOCK
+ssh-add() {
+  [[ "$*" != -l ]] || return 0
+  if [[ "$*" = -L ]]; then
+    # The target key in another key's comment must not count as loaded.
+    print -r -- 'ssh-ed25519 other-key ssh-ed25519 target-key file-comment'
+    return
+  fi
+  [[ "$#" = 1 && "$1" = "$HOME/.ssh/id_ed25519" ]] || return 1
+  print -r -- agent-add >> "$ZSH_TEST_TRACE"
+}
+EOF
+
+  run -0 --separate-stderr sandbox_zsh -lc 'print -r -- "$SSH_AUTH_SOCK"'
+
+  [ "$output" = "$SANDBOX_HOME/.ssh/cached.sock" ]
+  [ -z "$stderr" ]
+  [ "$(cat "$SANDBOX_ROOT/startup.log")" = agent-add ]
+}
+
+@test "Linux login replaces a stale cached agent even when another agent exists" {
+  zsh_sandbox_apply linux amd64
+  mkdir -p "$SANDBOX_HOME/.ssh"
+  printf 'test key\n' > "$SANDBOX_HOME/.ssh/id_ed25519"
+  printf 'SSH_AUTH_SOCK=%q; export SSH_AUTH_SOCK;\n' \
+    "$SANDBOX_HOME/.ssh/stale.sock" > "$SANDBOX_HOME/.ssh/ssh-agent"
+  cat >> "$SANDBOX_HOME/.zshenv" << 'EOF'
+unset SSH_AUTH_SOCK
+ps() { print -r -- '123 ssh-agent -s'; }
+ssh-agent() {
+  [[ "$*" = -s ]] || return 1
+  print -r -- agent-start >> "$ZSH_TEST_TRACE"
+  printf 'SSH_AUTH_SOCK=%q; export SSH_AUTH_SOCK;\n' "$HOME/.ssh/live.sock"
+}
+ssh-add() {
+  if [[ "$*" = -l ]]; then
+    [[ ${SSH_AUTH_SOCK:-} = "$HOME/.ssh/live.sock" ]] || return 2
+  else
+    [[ "$#" = 1 && "$1" = "$HOME/.ssh/id_ed25519" ]] || return 1
+    [[ ${SSH_AUTH_SOCK:-} = "$HOME/.ssh/live.sock" ]] || return 2
+    print -r -- agent-add >> "$ZSH_TEST_TRACE"
+  fi
+}
+EOF
+
+  run -0 --separate-stderr sandbox_zsh -lc 'print -r -- "$SSH_AUTH_SOCK"'
+
+  [ "$output" = "$SANDBOX_HOME/.ssh/live.sock" ]
+  [ -z "$stderr" ]
+  [ "$(grep -c '^agent-start$' "$SANDBOX_ROOT/startup.log")" = 1 ]
+  [ "$(grep -c '^agent-add$' "$SANDBOX_ROOT/startup.log")" = 1 ]
+}
+
+@test "Linux login creates a private agent cache when the SSH directory is absent" {
+  zsh_sandbox_apply linux amd64
+  cat >> "$SANDBOX_HOME/.zshenv" << 'EOF'
+unset SSH_AUTH_SOCK
+ssh-add() { return 2; }
+ssh-agent() { printf 'export SSH_AUTH_SOCK=%q\n' "$HOME/.ssh/test.sock"; }
+EOF
+
+  run -0 --separate-stderr sandbox_zsh -lc 'print -r -- "$SSH_AUTH_SOCK"'
+
+  [ "$output" = "$SANDBOX_HOME/.ssh/test.sock" ]
+  [ -z "$stderr" ]
+  [ -f "$SANDBOX_HOME/.ssh/ssh-agent" ]
+  [ "$(find "$SANDBOX_HOME/.ssh" -type f -perm 600)" = "$SANDBOX_HOME/.ssh/ssh-agent" ]
+  [ "$(find "$SANDBOX_HOME/.ssh" -type d -perm 700)" = "$SANDBOX_HOME/.ssh" ]
+}
+
+@test "Linux login leaves a symlink at the agent cache path and its target intact" {
+  zsh_sandbox_apply linux amd64
+  mkdir -p "$SANDBOX_HOME/.ssh"
+  printf 'print -r -- unexpected > "$HOME/cache-was-evaluated"\n' > "$SANDBOX_ROOT/unrelated"
+  ln -s "$SANDBOX_ROOT/unrelated" "$SANDBOX_HOME/.ssh/ssh-agent"
+  cat >> "$SANDBOX_HOME/.zshenv" << 'EOF'
+unset SSH_AUTH_SOCK
+ssh-add() { return 2; }
+ssh-agent() { printf 'export SSH_AUTH_SOCK=%q\n' "$HOME/.ssh/test.sock"; }
+EOF
+
+  run -0 --separate-stderr sandbox_zsh -lc 'print -r -- ready'
+
+  [ "$output" = ready ]
+  [ -z "$stderr" ]
+  [ -L "$SANDBOX_HOME/.ssh/ssh-agent" ]
+  [ "$(cat "$SANDBOX_ROOT/unrelated")" = 'print -r -- unexpected > "$HOME/cache-was-evaluated"' ]
+  [ ! -e "$SANDBOX_HOME/cache-was-evaluated" ]
+}
+
+@test "Linux login keeps the previous agent cache when starting an agent fails" {
+  zsh_sandbox_apply linux amd64
+  mkdir -p "$SANDBOX_HOME/.ssh"
+  printf '# previous cache\n' > "$SANDBOX_HOME/.ssh/ssh-agent"
+  cat >> "$SANDBOX_HOME/.zshenv" << 'EOF'
+unset SSH_AUTH_SOCK
+ssh-add() { return 2; }
+ssh-agent() {
+  print -r -- 'print -r -- unexpected > "$HOME/failed-agent-output-was-evaluated"'
+  return 1
+}
+EOF
+
+  run -0 --separate-stderr sandbox_zsh -lc 'print -r -- ready'
+
+  [ "$output" = ready ]
+  [ -z "$stderr" ]
+  [ "$(cat "$SANDBOX_HOME/.ssh/ssh-agent")" = '# previous cache' ]
+  [ ! -e "$SANDBOX_HOME/failed-agent-output-was-evaluated" ]
 }
 
 @test "initializes the login environment before loading configured Oh My Zsh" {

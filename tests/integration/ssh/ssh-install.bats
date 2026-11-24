@@ -1,10 +1,10 @@
 #!/usr/bin/env bats
 
-load '../../helpers/sandbox.bash'
-load '../../helpers/install.bash'
-load '../../helpers/git.bash'
-load '../../helpers/identity.bash'
-load '../../helpers/ssh.bash'
+load '../../support/helpers/sandbox.bash'
+load '../../support/helpers/install.bash'
+load '../../support/helpers/git.bash'
+load '../../support/helpers/identity.bash'
+load '../../support/helpers/ssh.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0
@@ -87,7 +87,7 @@ TOML
   ssh_assert_preserved "$SANDBOX_SSH_KEY.pub" "$SANDBOX_ROOT/public.before"
 }
 
-@test "a later apply recovers a deleted public key without changing the private key" {
+@test "changed installer inputs trigger public-key recovery without changing the private key" {
   sandbox_chezmoi apply
   cp -p "$SANDBOX_SSH_KEY" "$SANDBOX_ROOT/private.before"
   cp "$SANDBOX_SSH_KEY.pub" "$SANDBOX_ROOT/expected.pub"

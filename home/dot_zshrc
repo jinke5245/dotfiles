@@ -78,6 +78,12 @@ ZSH_THEME="robbyrussell"
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(git)
 
+################################################################################
+#
+# Shell configuration
+#
+################################################################################
+
 # Reuse the login environment; standalone interactive shells only query the prefix.
 if [[ -z ${HOMEBREW_PREFIX:-} ]] && (( $+commands[brew] )); then
   export HOMEBREW_PREFIX="$(brew --prefix 2>/dev/null)"
@@ -97,6 +103,33 @@ fi
 # Keep the shell usable until oh-my-zsh has been installed.
 if [[ -r "$ZSH/oh-my-zsh.sh" ]]; then
   source "$ZSH/oh-my-zsh.sh"
+fi
+
+# Load Homebrew plugins after Oh My Zsh initializes completion.
+if [[ -n ${HOMEBREW_PREFIX:-} ]]; then
+  # autojump
+  source "$HOMEBREW_PREFIX/etc/profile.d/autojump.sh"
+
+  # zsh-autosuggestions
+  source "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+
+  # zsh-syntax-highlighting
+  source "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+
+  # zsh-history-substring-search: load after syntax highlighting, as upstream recommends.
+  source "$HOMEBREW_PREFIX/share/zsh-history-substring-search/zsh-history-substring-search.zsh"
+fi
+
+# Support terminal-specific arrows and the common normal/application sequences.
+if (( $+widgets[history-substring-search-up] )); then
+  zmodload zsh/terminfo
+  for zsh_key in "$terminfo[kcuu1]" '^[[A' '^[OA'; do
+    [[ -n "$zsh_key" ]] && bindkey "$zsh_key" history-substring-search-up
+  done
+  for zsh_key in "$terminfo[kcud1]" '^[[B' '^[OB'; do
+    [[ -n "$zsh_key" ]] && bindkey "$zsh_key" history-substring-search-down
+  done
+  unset zsh_key
 fi
 
 ################################################################################
@@ -134,11 +167,23 @@ fi
 
 ################################################################################
 #
-# Personal additions
+# Development tools
 #
 ################################################################################
 
-# fnm: initialize Node.js version switching and register completion after Oh My Zsh.
+# rustup: expose Homebrew's keg-only shims without invoking them.
+if [[ -n ${HOMEBREW_PREFIX:-} && -d "$HOMEBREW_PREFIX/opt/rustup/bin" ]]; then
+  typeset -U path PATH
+  path=("$HOMEBREW_PREFIX/opt/rustup/bin" $path)
+fi
+
+# Prefer Homebrew's JDK over system Java launchers.
+if [[ -n ${HOMEBREW_PREFIX:-} && -d "$HOMEBREW_PREFIX/opt/openjdk/bin" ]]; then
+  typeset -U path PATH
+  path=("$HOMEBREW_PREFIX/opt/openjdk/bin" $path)
+fi
+
+# Initialize fnm after other PATH changes so its Node directory comes first.
 if (( $+commands[fnm] )); then
   eval "$(fnm env --use-on-cd --shell zsh)"
   if (( $+functions[compdef] )); then
@@ -146,33 +191,13 @@ if (( $+commands[fnm] )); then
   fi
 fi
 
-if [[ -n ${HOMEBREW_PREFIX:-} ]]; then
-  # autojump
-  source "$HOMEBREW_PREFIX/etc/profile.d/autojump.sh"
+################################################################################
+#
+# Machine-local overrides
+#
+################################################################################
 
-  # zsh-autosuggestions
-  source "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
-
-  # zsh-syntax-highlighting
-  source "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
-
-  # zsh-history-substring-search: load after syntax highlighting, as upstream recommends.
-  source "$HOMEBREW_PREFIX/share/zsh-history-substring-search/zsh-history-substring-search.zsh"
-fi
-
-# Support terminal-specific arrows and the common normal/application sequences.
-if (( $+widgets[history-substring-search-up] )); then
-  zmodload zsh/terminfo
-  for zsh_key in "$terminfo[kcuu1]" '^[[A' '^[OA'; do
-    [[ -n "$zsh_key" ]] && bindkey "$zsh_key" history-substring-search-up
-  done
-  for zsh_key in "$terminfo[kcud1]" '^[[B' '^[OB'; do
-    [[ -n "$zsh_key" ]] && bindkey "$zsh_key" history-substring-search-down
-  done
-  unset zsh_key
-fi
-
-# Load machine-local overrides after shared configuration.
+# Load this last so local settings can override shared defaults.
 if [[ -r "$HOME/.zshrc.local" ]]; then
   source "$HOME/.zshrc.local"
 fi

@@ -3,9 +3,9 @@
 # Snippets expand in the isolated Zsh process, with real prepared tools.
 # shellcheck disable=SC2016
 
-load '../helpers/sandbox.bash'
-load '../helpers/zsh.bash'
-load '../helpers/flow.bash'
+load '../support/helpers/sandbox.bash'
+load '../support/helpers/zsh.bash'
+load '../support/helpers/flow.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0
@@ -21,6 +21,9 @@ setup() {
   run -0 sandbox_zsh -lic '
     for tool in go fnm uv uvx; do
       [[ $(command -v "$tool") = "$HOMEBREW_PREFIX/bin/$tool" ]] || exit 1
+    done
+    for tool in rustup rustc cargo; do
+      [[ $(command -v "$tool") = "$HOMEBREW_PREFIX/opt/rustup/bin/$tool" ]] || exit 1
     done
     for tool in node corepack pnpm; do
       [[ $(command -v "$tool") = "$FNM_MULTISHELL_PATH/bin/$tool" ]] || exit 1

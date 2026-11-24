@@ -3,8 +3,8 @@
 # These snippets expand in the isolated child shell, not in Bats.
 # shellcheck disable=SC2016
 
-load '../../helpers/sandbox.bash'
-load '../../helpers/install.bash'
+load '../../support/helpers/sandbox.bash'
+load '../../support/helpers/install.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0
@@ -22,7 +22,7 @@ setup() {
       source "$1/lib/git.sh" &&
       source "$1/lib/ssh.sh" &&
       source "$1/lib/iterm2.sh"
-  ' _ "$SANDBOX_REPOSITORY/scripts"
+  ' _ "$SANDBOX_REPOSITORY/scripts/install"
 
   [ -z "$output" ]
   [ ! -e "$SANDBOX_HOME/.install-test/download.log" ]
@@ -90,7 +90,7 @@ EOF
   [ ! -e "$SANDBOX_HOME/.install-test/oh-my-zsh.log" ]
 }
 
-@test "reapplying preserves configuration and does not reinstall dependencies" {
+@test "reapplying unchanged configuration skips the installer" {
   install_sandbox_platform Darwin
   sandbox_chezmoi apply
 
@@ -106,31 +106,57 @@ EOF
   # A single log entry means each dependency was installed only once.
   [ "$(cat "$SANDBOX_HOME/.install-test/oh-my-zsh.log")" = install ]
   [ "$(cat "$SANDBOX_HOME/.install-test/homebrew.log")" = install ]
+  [ "$(cat "$SANDBOX_HOME/.install-test/bundle.log")" = install ]
 }
 
-@test "the next apply picks up changes to the external entry point and libraries" {
+@test "shell configuration changes apply without rerunning the installer" {
+  sandbox_chezmoi apply
+  printf '\n# Updated shared shell configuration\n' >> "$SANDBOX_REPOSITORY/home/dot_zshrc"
+
+  run -0 sandbox_chezmoi apply
+
+  cmp "$SANDBOX_REPOSITORY/home/dot_zshrc" "$SANDBOX_HOME/.zshrc"
+  [ "$(cat "$SANDBOX_HOME/.install-test/bundle.log")" = install ]
+}
+
+@test "a failed installer is retried without changing its inputs" {
+  touch "$SANDBOX_HOME/.install-test/fail-bundle"
+  run ! sandbox_chezmoi apply
+
+  [ ! -e "$SANDBOX_HOME/.zshrc" ]
+  rm "$SANDBOX_HOME/.install-test/fail-bundle"
+
+  run -0 sandbox_chezmoi apply
+
+  cmp "$SANDBOX_REPOSITORY/home/dot_zshrc" "$SANDBOX_HOME/.zshrc"
+  [ "$(grep -c '^bundle install$' "$SANDBOX_HOME/.install-test/events.log")" -eq 2 ]
+}
+
+@test "a changed installation library reruns the installer" {
   sandbox_chezmoi apply
 
-  # A changed dependency check must run even though the adapter is unchanged.
-  cat >> "$SANDBOX_REPOSITORY/scripts/lib/oh-my-zsh.sh" << 'EOF'
+  cat >> "$SANDBOX_REPOSITORY/scripts/install/lib/oh-my-zsh.sh" << 'EOF'
 install_oh_my_zsh() {
   printf 'library changed\n' >&2
   return 7
 }
 EOF
 
-  run ! sandbox_chezmoi apply
+  run -1 sandbox_chezmoi apply
 
-  [[ "$output" == *'library changed'* ]] || return 1
+  [[ "$output" == *'library changed'* ]]
+}
 
-  # Replacing the entry point must also take effect without changing the adapter.
-  cat > "$SANDBOX_REPOSITORY/scripts/install.sh" << 'EOF'
+@test "a changed installation entry point reruns the installer" {
+  sandbox_chezmoi apply
+
+  cat > "$SANDBOX_REPOSITORY/scripts/install/install.sh" << 'EOF'
 #!/bin/bash
 printf 'entry changed\n' >&2
 exit 8
 EOF
 
-  run ! sandbox_chezmoi apply
+  run -1 sandbox_chezmoi apply
 
-  [[ "$output" == *'entry changed'* ]] || return 1
+  [[ "$output" == *'entry changed'* ]]
 }

@@ -3,10 +3,10 @@
 # Shell snippets expand in the isolated child processes.
 # shellcheck disable=SC2016
 
-load '../helpers/sandbox.bash'
-load '../helpers/zsh.bash'
-load '../helpers/flow.bash'
-load '../helpers/development-flow.bash'
+load '../support/helpers/sandbox.bash'
+load '../support/helpers/zsh.bash'
+load '../support/helpers/flow.bash'
+load '../support/helpers/development-flow.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0
@@ -22,7 +22,8 @@ setup() {
   [ ! -e "$SANDBOX_HOME/.ssh" ]
   [ ! -e "$SANDBOX_HOME/.config/git/config.local" ]
 
-  cp "$SANDBOX_REPOSITORY/tests/fixtures/zsh/local.zsh" "$SANDBOX_HOME/.zshrc.local"
+  cp "$SANDBOX_REPOSITORY/tests/support/fixtures/zsh/local.zsh" "$SANDBOX_HOME/.zshrc.local"
+  printf 'export DOTFILES_TEST_LOGIN_LOCAL=loaded\n' > "$SANDBOX_HOME/.zprofile.local"
   development_flow_prepare "$SANDBOX_HOME" "$SANDBOX_ROOT/development.before"
 
   run -0 sandbox_chezmoi apply
@@ -30,11 +31,12 @@ setup() {
   [ -f "$SANDBOX_HOME/.oh-my-zsh/oh-my-zsh.sh" ]
   [ -f "$SANDBOX_HOME/.ssh/id_ed25519" ]
   [ -f "$SANDBOX_HOME/.ssh/id_ed25519.pub" ]
-  cmp "$SANDBOX_REPOSITORY/tests/fixtures/zsh/local.zsh" "$SANDBOX_HOME/.zshrc.local"
+  cmp "$SANDBOX_REPOSITORY/tests/support/fixtures/zsh/local.zsh" "$SANDBOX_HOME/.zshrc.local"
 
   # Start the deployed configuration with real dependencies and local overrides.
   run -0 sandbox_zsh -lic '
     [[ $HOMEBREW_PREFIX = "$1" ]] &&
+    [[ $DOTFILES_TEST_LOGIN_LOCAL = loaded ]] &&
     [[ $ZSH_THEME = robbyrussell ]] &&
     [[ ${aliases[gst]} = "git status --short" ]] &&
     [[ $EDITOR = nvim ]] &&
@@ -48,6 +50,7 @@ setup() {
 
   # Keep manual identity edits, framework customization, and development state.
   run -0 sandbox_zsh -lc '
+    [[ $DOTFILES_TEST_LOGIN_LOCAL = loaded ]] &&
     git config --file "$HOME/.config/git/config.local" user.name "Manual Name" &&
     git config --file "$HOME/.config/git/config.local" user.email manual@example.invalid
   '
@@ -56,6 +59,7 @@ setup() {
   local file before
   local files=(
     .zprofile
+    .zprofile.local
     .zshrc
     .zshrc.local
     .oh-my-zsh/oh-my-zsh.sh
@@ -89,6 +93,7 @@ setup() {
   development_flow_check "$SANDBOX_HOME" "$SANDBOX_ROOT/development.before"
 
   run -0 sandbox_zsh -lic '
+    [[ $DOTFILES_TEST_LOGIN_LOCAL = loaded ]] &&
     [[ $(git config --get user.name) = "Manual Name" ]] &&
     [[ $(git config --get user.email) = manual@example.invalid ]] &&
     [[ $EDITOR = nvim ]] &&

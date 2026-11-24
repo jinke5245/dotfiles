@@ -3,8 +3,8 @@
 # Credential helpers expand only inside the isolated Git process.
 # shellcheck disable=SC2016
 
-load '../../helpers/sandbox.bash'
-load '../../helpers/git.bash'
+load '../../support/helpers/sandbox.bash'
+load '../../support/helpers/git.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0
@@ -12,7 +12,7 @@ setup_file() {
 
 setup() {
   git_sandbox_create
-  cp "$SANDBOX_REPOSITORY/tests/fixtures/git/gh.bash" "$SANDBOX_ROOT/bin/gh"
+  cp "$SANDBOX_REPOSITORY/tests/support/fixtures/git/gh.bash" "$SANDBOX_ROOT/bin/gh"
   chmod +x "$SANDBOX_ROOT/bin/gh"
 }
 

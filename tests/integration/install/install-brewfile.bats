@@ -3,8 +3,8 @@
 # Each test runs the entry point with its own command search path.
 # shellcheck disable=SC2030,SC2031
 
-load '../../helpers/sandbox.bash'
-load '../../helpers/install.bash'
+load '../../support/helpers/sandbox.bash'
+load '../../support/helpers/install.bash'
 
 setup_file() {
   bats_require_minimum_version 1.5.0
@@ -19,7 +19,7 @@ setup() {
   for platform in Darwin Linux; do
     install_sandbox_platform "$platform"
 
-    run -0 install_sandbox_run bash "$SANDBOX_REPOSITORY/scripts/install.sh"
+    run -0 install_sandbox_run bash "$SANDBOX_REPOSITORY/scripts/install/install.sh"
 
     [ "$(cat "$SANDBOX_HOME/.install-test/bundle-brew")" = "$(cat "$SANDBOX_HOME/.install-test/prefix")/bin/brew" ]
     [ "$(cat "$SANDBOX_HOME/.install-test/bundle-file")" = "$SANDBOX_REPOSITORY/Brewfile" ]
@@ -35,7 +35,7 @@ setup() {
   install_fixture_brew "$SANDBOX_ROOT/prefixes/apple"
   SANDBOX_PATH="$SANDBOX_ROOT/chosen brew/bin:$SANDBOX_PATH"
 
-  run -0 install_sandbox_run bash "$SANDBOX_REPOSITORY/scripts/install.sh"
+  run -0 install_sandbox_run bash "$SANDBOX_REPOSITORY/scripts/install/install.sh"
 
   [ "$(cat "$SANDBOX_HOME/.install-test/bundle-brew")" = "$SANDBOX_ROOT/chosen brew/bin/brew" ]
   [ ! -e "$SANDBOX_HOME/.install-test/homebrew.log" ]
@@ -46,7 +46,7 @@ setup() {
   for prefix in apple intel linux; do
     install_fixture_brew "$SANDBOX_ROOT/prefixes/$prefix"
 
-    run -0 install_sandbox_run bash "$SANDBOX_REPOSITORY/scripts/install.sh"
+    run -0 install_sandbox_run bash "$SANDBOX_REPOSITORY/scripts/install/install.sh"
 
     [ "$(cat "$SANDBOX_HOME/.install-test/bundle-brew")" = "$SANDBOX_ROOT/prefixes/$prefix/bin/brew" ]
     [ ! -e "$SANDBOX_HOME/.install-test/homebrew.log" ]
@@ -59,7 +59,7 @@ setup() {
   # A successful installer exit is insufficient if it leaves no executable.
   printf 'exit 0\n' > "$SANDBOX_HOME/.install-test/homebrew-installer.bash"
 
-  run -1 install_sandbox_run bash "$SANDBOX_REPOSITORY/scripts/install.sh"
+  run -1 install_sandbox_run bash "$SANDBOX_REPOSITORY/scripts/install/install.sh"
 
   [[ "$output" == *'Homebrew'* && "$output" == *'executable'* ]]
   [ ! -e "$SANDBOX_HOME/.install-test/bundle.log" ]
@@ -70,13 +70,17 @@ setup() {
   install_fixture_brew "$SANDBOX_ROOT/prefixes/linux"
   touch "$SANDBOX_HOME/.install-test/fail-bundle"
 
-  run -94 install_sandbox_run bash "$SANDBOX_REPOSITORY/scripts/install.sh"
+  run -94 install_sandbox_run bash "$SANDBOX_REPOSITORY/scripts/install/install.sh"
 
   [[ "$output" == *'Homebrew Bundle'* ]]
   [ ! -e "$SANDBOX_HOME/.install-test/oh-my-zsh.log" ]
 }
 
-@test "each apply reads the current Brewfile without reinstalling Homebrew" {
+@test "a changed Brewfile reruns Bundle from a dotted checkout with glob characters" {
+  local repository="$SANDBOX_ROOT/github.com/.dotfiles [1]*?{a,b}"
+  mkdir -p "$(dirname "$repository")"
+  mv "$SANDBOX_REPOSITORY" "$repository"
+  SANDBOX_REPOSITORY="$repository"
   install_fixture_brew "$SANDBOX_ROOT/prefixes/linux"
   sandbox_chezmoi apply
 
